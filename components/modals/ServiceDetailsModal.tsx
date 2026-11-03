@@ -137,7 +137,7 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "وجبات ساخنة بجودة المطعم من مطعم محلي شريك، توصّل طازجة إلى منزل عائلتك.",
     descTr: "Yerel ortak restoranlardan sicak yemekler, ailenizin evine taze teslim.",
     price: 28.0,
-    imageUrl: "https://images.pexels.com/photos/6248880/pexels-photo-6248880.jpeg?auto=compress&cs=tinysrgb&w=900",
+    imageUrl: "https://images.pexels.com/photos/1327393/pexels-photo-1327393.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-brand-500",
     category: "food",
   },

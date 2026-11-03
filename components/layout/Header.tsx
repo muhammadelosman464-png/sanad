@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,7 @@ export default function Header() {
   const [panel, setPanel] = useState<Panel>(null);
   const [items, setItems] = useState<PanelItem[]>(SEED_ITEMS);
   const panelRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = (event: Event) => setQuery((event as CustomEvent<string>).detail);
@@ -50,6 +51,13 @@ export default function Header() {
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
   }, []);
+
+  const visualSearchText = language === "ar" ? "جارٍ البحث بالصورة..." : language === "tr" ? "Görselle aranıyor..." : "Searching by image...";
+
+  const handleVisualSearch = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files?.[0]) toast.success(visualSearchText);
+    event.target.value = "";
+  };
 
   const updateSearch = (value: string) => {
     setQuery(value);
@@ -101,6 +109,7 @@ export default function Header() {
             </div>
           </Link>
 
+          <input ref={imageInputRef} type="file" accept="image/*" capture="environment" onChange={handleVisualSearch} className="hidden" aria-hidden="true" tabIndex={-1} />
           <div className="relative flex-1 max-w-2xl mx-auto">
             <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -113,7 +122,7 @@ export default function Header() {
             <button
               type="button"
               className="absolute end-2 top-2 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-white dark:hover:bg-slate-800 transition"
-              aria-label="Visual search"
+              aria-label="Visual search" onClick={() => imageInputRef.current?.click()}
             >
               <Camera className="w-4 h-4" />
             </button>

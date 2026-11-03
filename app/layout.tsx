@@ -63,8 +63,8 @@ export default function RootLayout({
        */}
       <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#f6faf7] dark:bg-[#07110d]`}>
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-          <div className="absolute inset-0 bg-[url('/logo.jpeg')] bg-center bg-cover bg-no-repeat opacity-[0.05] dark:opacity-[0.05] [transform:perspective(1200px)_rotateX(4deg)_rotateY(-5deg)_scale(1.12)]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#f6faf7]/90 via-[#f6faf7]/95 to-[#f6faf7]/90 dark:from-[#07110d]/90 dark:via-[#07110d]/95 dark:to-[#07110d]/92" />
+          <div className="absolute inset-0 bg-[url('/assets/images/WhatsApp_Image_2026-11-04_at_1.20.46_AM.jpeg')] bg-center bg-cover bg-no-repeat [transform:perspective(1200px)_rotateX(3deg)_rotateY(-4deg)_scale(1.08)]" />
+          <div className="absolute inset-0 bg-[#f6faf7]/85 dark:bg-black/85" />
         </div>
 
         <div className="relative z-10 flex flex-col min-h-screen text-slate-900 dark:text-slate-100">

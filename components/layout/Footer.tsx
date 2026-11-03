@@ -184,6 +184,24 @@ export default function Footer() {
             </div>
           </div>
 
+          <section className="border-t border-b border-slate-800 py-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 rounded-3xl bg-gradient-to-r from-emerald-900/60 to-slate-900 border border-emerald-700/30 p-6 sm:p-8">
+              <div className="text-center md:text-start">
+                <p className="text-lg font-bold text-white">حمل تطبيق سند الآن على iOS و Android لتجربة أسرع</p>
+                <p className="text-sm text-slate-400 mt-1">Get the Sanad app on iOS and Android for a faster experience</p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <button type="button" className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
+                  <span className="block text-[10px] text-slate-300">Download on the</span>
+                  <span className="block text-sm font-bold">App Store</span>
+                </button>
+                <button type="button" className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
+                  <span className="block text-[10px] text-slate-300">Get it on</span>
+                  <span className="block text-sm font-bold">Google Play</span>
+                </button>
+              </div>
+            </div>
+          </section>
           <div className="flex justify-center py-8 border-b border-slate-800"><div className="relative w-24 h-24 rounded-[28px] overflow-hidden ring-1 ring-emerald-500/30 shadow-2xl shadow-emerald-950/40"><img src="/logo.jpeg" alt="Sanad" className="w-full h-full object-cover" /></div></div>
 
           {/* Bottom Bar: Copyright & Founder Signature */}
