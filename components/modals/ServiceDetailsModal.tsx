@@ -11,7 +11,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -26,10 +25,8 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
-import { toast } from "@/components/ui/Toast";
 import AuthModal from "@/components/modals/AuthModal";
-import type { User } from "@supabase/supabase-js";
+import { useCart } from "@/context/CartContext";
 
 /* ─── Service catalog ────────────────────────────────────────────────────── */
 
@@ -227,33 +224,20 @@ export default function ServiceDetailsModal({
   onClose,
 }: ServiceDetailsModalProps) {
   const { language } = useLanguage();
-  const router = useRouter();
+  const { addItem, openCart } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [customAmount, setCustomAmountState] = useState<string>("");
   const [locationNote, setLocationNote] = useState<string>("");
-  const [user, setUser] = useState<User | null>(null);
   const [authOpen, setAuthOpen] = useState(false);
-  const [ordering, setOrdering] = useState(false);
 
   const service = serviceId ? SERVICE_CATALOG[serviceId] : null;
-
-  /* Fetch Supabase session */
-  useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) return;
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) =>
-      setUser(s?.user ?? null)
-    );
-    return () => listener.subscription.unsubscribe();
-  }, []);
 
   /* Reset on service change */
   useEffect(() => {
     setQuantity(1);
     setCustomAmountState("");
     setLocationNote("");
-    setOrdering(false);
   }, [serviceId]);
 
   /* Close on Escape key */
@@ -314,13 +298,14 @@ export default function ServiceDetailsModal({
     : "";
 
   /* ── Order handler ────────────────────────────────────────────────────── */
-  const handleOrder = async () => {
-    if (!user) { setAuthOpen(true); return; }
-    setOrdering(true);
-    /* Simulate brief payment processing, then redirect to success page */
-    await new Promise((r) => setTimeout(r, 900));
-    /* Update 3: real router navigation — no toast-only fake */
-    router.push("/checkout-success");
+  const handleOrder = () => {
+    if (!service || service.price === 0) {
+      setAuthOpen(true);
+      return;
+    }
+    addItem(service, parsedCustom > 0 ? parsedCustom : service.price);
+    onClose();
+    openCart();
   };
 
   return (
@@ -498,28 +483,16 @@ export default function ServiceDetailsModal({
                 {/* CTA */}
                 <button
                   onClick={handleOrder}
-                  disabled={ordering}
                   className="w-full py-4 rounded-2xl font-bold text-white text-base flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-xl disabled:opacity-60
                     bg-gradient-to-r from-rose-600 via-brand-600 to-brand-500 hover:from-rose-700 hover:to-brand-600 shadow-brand-500/20"
                 >
-                  {user ? (
-                    <>
-                      <ShoppingCart className="w-5 h-5" />
-                      {ordering ? <span className="animate-pulse">{T.processing}</span> : T.orderNow}
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-5 h-5" />
-                      {T.loginToOrder}
-                    </>
-                  )}
+                  <ShoppingCart className="w-5 h-5" />
+                  {service.price > 0 ? (language === "ar" ? "أضف إلى السلة" : language === "tr" ? "Sepete ekle" : "Add to basket") : T.requestTitle}
                 </button>
 
-                {!user && (
-                  <p className="text-center text-xs text-slate-400 dark:text-slate-500 -mt-2 pb-1">
-                    {T.guestHint}
-                  </p>
-                )}
+                <p className="text-center text-xs text-slate-400 dark:text-slate-500 -mt-2 pb-1">
+                  {language === "ar" ? "يمكنك التصفح والإضافة للسلة دون تسجيل الدخول." : language === "tr" ? "Giriş yapmadan hizmetleri inceleyip sepete ekleyebilirsiniz." : "Browse and add services to your basket without signing in."}
+                </p>
               </div>
             </motion.div>
           </div>

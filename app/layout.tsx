@@ -9,6 +9,8 @@ import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import { ToastContainer } from "@/components/ui/Toast";
 import LiveSocialProofFeed from "@/components/social/LiveSocialProofFeed";
+import { CartProvider } from "@/context/CartContext";
+import CartDrawer from "@/components/cart/CartDrawer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,29 +60,13 @@ export default function RootLayout({
        * Two-layer overlay: slate-950 base + black/85 on top = ultra-dark.
        * REMINDER: Place logo.jpeg in /public/logo.jpeg
        */}
-      <body
-        className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-slate-950`}
-        style={{
-          backgroundImage: "url('/logo.jpeg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        {/* Layer 1: slate-950 base — kills any light bleed from logo */}
-        <div
-          className="fixed inset-0 bg-slate-950/90 pointer-events-none z-0"
-          aria-hidden="true"
-        />
-        {/* Layer 2: black overlay — logo is now a ghost-faint watermark at ~10% visibility */}
-        <div
-          className="fixed inset-0 bg-black/80 pointer-events-none z-[1]"
-          aria-hidden="true"
-        />
+      <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#f6faf7] dark:bg-[#07110d]`}>
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute inset-0 bg-[url('/logo.jpeg')] bg-center bg-cover bg-no-repeat opacity-[0.07] dark:opacity-[0.045] [transform:perspective(1200px)_rotateX(4deg)_rotateY(-5deg)_scale(1.12)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#f6faf7]/90 via-[#f6faf7]/95 to-[#f6faf7]/90 dark:from-[#07110d]/90 dark:via-[#07110d]/95 dark:to-[#07110d]/92" />
+        </div>
 
-        {/* All page content sits above the overlay */}
-        <div className="relative z-10 flex flex-col min-h-screen text-slate-100">
+        <div className="relative z-10 flex flex-col min-h-screen text-slate-900 dark:text-slate-100">
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -88,14 +74,10 @@ export default function RootLayout({
             disableTransitionOnChange={false}
           >
             <LanguageProvider>
-              {/* Top Interactive Mini Bar Ribbon */}
-              <TopMiniBar />
-
-              {/* Main Sticky Header */}
-              <Header />
-
-              {/* Page Content */}
-              <main className="flex-1 flex flex-col">{children}</main>
+              <CartProvider>
+                <TopMiniBar />
+                <Header />
+                <main className="flex-1 flex flex-col">{children}</main>
 
               {/* Unified Footer */}
               <Footer />
@@ -106,8 +88,9 @@ export default function RootLayout({
               {/* Live Social Proof Feed — bottom-start corner */}
               <LiveSocialProofFeed />
 
-              {/* Global Toast Notification System */}
-              <ToastContainer />
+                <CartDrawer />
+                <ToastContainer />
+              </CartProvider>
             </LanguageProvider>
           </ThemeProvider>
         </div>

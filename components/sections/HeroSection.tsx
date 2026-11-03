@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -100,6 +100,16 @@ export default function HeroSection({ onSearch }: HeroSectionProps) {
   const { t, language, direction } = useLanguage();
   // authOpen removed — guests can browse freely; auth is triggered only at "Order Now"
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const nextQuery = (event as CustomEvent<string>).detail;
+      setSearchQuery(nextQuery);
+      onSearch?.(nextQuery);
+    };
+    window.addEventListener("sanad-search", handler);
+    return () => window.removeEventListener("sanad-search", handler);
+  }, [onSearch]);
 
   const categories = [
     {
