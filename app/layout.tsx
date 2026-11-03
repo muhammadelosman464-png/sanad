@@ -7,6 +7,7 @@ import TopMiniBar from "@/components/layout/TopMiniBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
+import SupportFab from "@/components/layout/SupportFab";
 import { ToastContainer } from "@/components/ui/Toast";
 import LiveSocialProofFeed from "@/components/social/LiveSocialProofFeed";
 import { CartProvider } from "@/context/CartContext";
@@ -64,10 +65,10 @@ export default function RootLayout({
       <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#f6faf7] dark:bg-[#07110d]`}>
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden [perspective:1400px]" aria-hidden="true">
           <div className="absolute inset-[-8%] bg-[url('/assets/images/WhatsApp_Image_2026-11-04_at_1.20.46_AM.jpeg')] bg-center bg-contain bg-no-repeat opacity-60 [transform:rotateX(8deg)_rotateY(-10deg)_translateZ(-40px)] [transform-origin:center_center]" />
-          <div className="absolute inset-0 bg-[#f6faf7]/85 dark:bg-black/85" />
+          <div className="absolute inset-0 bg-slate-950/75" />
         </div>
 
-        <div className="relative z-10 flex flex-col min-h-screen text-slate-900 dark:text-slate-100">
+        <div className="relative z-10 flex flex-col min-h-screen text-slate-100">
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -84,6 +85,7 @@ export default function RootLayout({
               <Footer />
 
               {/* Floating Concierge Chatbot */}
+              <SupportFab />
               <ChatWidget />
               <MobileBottomNav />
 

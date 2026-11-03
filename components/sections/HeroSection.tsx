@@ -87,6 +87,27 @@ export default function HeroSection() {
         onClose={() => setModalOpen(false)}
         onSubmit={addRequest}
       />
+      <section className="px-4 sm:px-6 lg:px-8 pb-6">
+        <div className="max-w-3xl mx-auto rounded-2xl border border-white/10 bg-slate-900/70 backdrop-blur-xl p-4 sm:p-5 shadow-xl">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-sm font-bold text-white">
+              {language === "ar" ? "حملة الشتاء الدافئ" : language === "tr" ? "Sıcak Kış Kampanyası" : "Warm Winter Campaign"}
+            </p>
+            <span className="text-sm font-black text-emerald-400 tabular-nums">75%</span>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-slate-700/80 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
+              initial={{ width: 0 }}
+              animate={{ width: "75%" }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-slate-300">
+            {language === "ar" ? "اكتمل 75% من الهدف، ساعدنا لنكمل الطريق" : language === "tr" ? "Hedefin %75'i tamamlandı, bize katılın" : "75% of the goal is complete, help us reach 100%"}
+          </p>
+        </div>
+      </section>
     </section>
   );
 }

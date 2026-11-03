@@ -171,10 +171,10 @@ const STEP_META: Record<
   OrderStatus,
   { en: string; ar: string; tr: string; Icon: React.ElementType; color: string }
 > = {
-  pending: { en: "Pending", ar: "انتظار", tr: "Bekliyor", Icon: Clock, color: "bg-amber-500" },
-  in_progress: { en: "Preparing", ar: "تجهيز", tr: "Hazırlanıyor", Icon: Package, color: "bg-blue-500" },
+  pending: { en: "Pending", ar: "قيد المراجعة", tr: "Bekliyor", Icon: Clock, color: "bg-amber-500" },
+  in_progress: { en: "Preparing", ar: "جاري التجهيز", tr: "Hazırlanıyor", Icon: Package, color: "bg-blue-500" },
   out_for_delivery: { en: "On the Way", ar: "في الطريق", tr: "Yolda", Icon: Truck, color: "bg-violet-500" },
-  delivered: { en: "Delivered", ar: "تُسلِّم", tr: "Teslim", Icon: CheckCircle2, color: "bg-emerald-500" },
+  delivered: { en: "Delivered", ar: "تم التسليم", tr: "Teslim", Icon: CheckCircle2, color: "bg-emerald-500" },
 };
 
 function StatusTracker({ status, language }: { status: OrderStatus; language: string }) {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, SearchX, ShoppingBag } from "lucide-react";
+import { Plus, SearchX, ShoppingBag, Star } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import ServiceDetailsModal, {
@@ -12,6 +12,7 @@ import ServiceDetailsModal, {
   type ServiceItem,
 } from "@/components/modals/ServiceDetailsModal";
 import { toast } from "@/components/ui/Toast";
+import { SERVICE_STATS } from "@/lib/service-stats";
 
 type FilterId = "all" | ServiceCategory;
 
@@ -23,6 +24,21 @@ const FILTERS: { id: FilterId; en: string; ar: string; tr: string }[] = [
   { id: "gifts", en: "Gifts", ar: "هدايا", tr: "Hediyeler" },
   { id: "support", en: "Direct support", ar: "دعم مباشر", tr: "Doğrudan destek" },
 ];
+
+type SortKey = "popular" | "priceAsc" | "priceDesc";
+
+const SORT_OPTIONS: { id: SortKey; en: string; ar: string; tr: string }[] = [
+  { id: "popular", en: "Most popular", ar: "الأكثر طلباً", tr: "En çok tercih edilen" },
+  { id: "priceAsc", en: "Price: low to high", ar: "السعر: من الأقل للأعلى", tr: "Fiyat: düşükten yükseğe" },
+  { id: "priceDesc", en: "Price: high to low", ar: "السعر: من الأعلى للأقل", tr: "Fiyat: yüksekten düşüğe" },
+];
+
+function sortServices(list: ServiceItem[], sortKey: SortKey): ServiceItem[] {
+  const sorted = [...list];
+  if (sortKey === "popular") return sorted.sort((a, b) => SERVICE_STATS[b.id].reviews - SERVICE_STATS[a.id].reviews);
+  if (sortKey === "priceAsc") return sorted.sort((a, b) => a.price - b.price);
+  return sorted.sort((a, b) => b.price - a.price);
+}
 
 const LOADING_DURATION_MS = 700;
 const SKELETON_COUNT = 6;
@@ -41,6 +57,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [visualFileName, setVisualFileName] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("popular");
 
   useEffect(() => {
     const handler = (event: Event) => setVisualFileName((event as CustomEvent<string | null>).detail);
@@ -59,7 +76,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
       return match ? [match] : [];
     }
     const query = searchTerm.trim().toLowerCase();
-    return Object.values(SERVICE_CATALOG).filter((service) => {
+    const list = Object.values(SERVICE_CATALOG).filter((service) => {
       const matchesFilter = activeFilter === "all" || service.category === activeFilter;
       if (!matchesFilter) return false;
       if (!query) return true;
@@ -68,7 +85,8 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [searchTerm, activeFilter, visualFileName]);
+    return sortServices(list, sortKey);
+  }, [searchTerm, activeFilter, visualFileName, sortKey]);
 
   const text = {
     heading: language === "ar" ? "خدماتنا" : language === "tr" ? "Hizmetlerimiz" : "Our services",
@@ -84,6 +102,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
         : language === "tr"
         ? "Başka bir arama deneyin veya farklı bir kategori seçin"
         : "Try another search term or pick a different category",
+    sortBy: language === "ar" ? "ترتيب حسب" : language === "tr" ? "Sırala" : "Sort by",
     visualEmptyTitle: language === "ar" ? "لم يتم العثور على المنتج" : language === "tr" ? "Ürün bulunamadı" : "No product found",
     visualEmptyHint: language === "ar" ? "جرّب صورة أخرى أو ابحث بالاسم" : language === "tr" ? "Başka bir fotoğraf deneyin veya isimle arayın" : "Try another photo or search by name",
     reset: language === "ar" ? "عرض كل الخدمات" : language === "tr" ? "Tüm hizmetleri göster" : "Show all services",
@@ -119,7 +138,21 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
         <div className="sticky top-16 z-20 -mx-4 sm:-mx-6 lg:-mx-8 mb-6 bg-[#f6faf7]/90 dark:bg-[#07110d]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4 mb-3">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{text.heading}</h2>
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">{services.length}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">{services.length}</span>
+              <select
+                value={sortKey}
+                onChange={(event) => setSortKey(event.target.value as SortKey)}
+                aria-label={text.sortBy}
+                className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {language === "ar" ? option.ar : language === "tr" ? option.tr : option.en}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {FILTERS.map((filter) => {
@@ -184,12 +217,14 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
             <AnimatePresence mode="popLayout">
               {services.map((service) => {
                 const isFree = service.price === 0;
+                const stats = SERVICE_STATS[service.id];
                 return (
                   <motion.div
                     key={service.id}
                     layout
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
                     exit={{ opacity: 0, scale: 0.96 }}
                     transition={{ duration: 0.3 }}
                     whileHover={{ y: -8 }}
@@ -220,6 +255,15 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
                     </div>
                     <div className="p-5">
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1.5">{titleFor(service)}</h3>
+                      <div className="flex items-center gap-1.5 mb-3 text-sm" aria-label={`${stats.rating} / 5`}>
+                        <div className="flex">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star key={star} className={`w-3.5 h-3.5 ${star <= Math.round(stats.rating) ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-600"}`} />
+                          ))}
+                        </div>
+                        <span className="font-bold text-slate-900 dark:text-white">{stats.rating.toFixed(1)}/5</span>
+                        <span className="text-slate-500 dark:text-slate-400">({stats.reviews.toLocaleString()})</span>
+                      </div>
                       <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2 mb-4">
                         {descFor(service)}
                       </p>

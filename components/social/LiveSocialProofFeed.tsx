@@ -34,11 +34,12 @@ interface ProofEvent {
   cityTo: { en: string; ar: string; tr: string };
   service: { en: string; ar: string; tr: string };
   minutesAgo: number;
+  kind: "donate" | "request";
 }
 
 // ── Static seed data (will be shuffled at runtime) ─────────────────────────
 
-const SEED_EVENTS: Omit<ProofEvent, "id" | "minutesAgo">[] = [
+const SEED_EVENTS: Omit<ProofEvent, "id" | "minutesAgo" | "kind">[] = [
   {
     icon: ShoppingBasket,
     iconColor: "text-amber-500",
@@ -128,7 +129,7 @@ const INTERVAL_MS = 4500; // how often a new card replaces it
 export default function LiveSocialProofFeed() {
   const { language } = useLanguage();
   const [current, setCurrent] = useState<ProofEvent | null>(null);
-  const poolRef = useRef<Omit<ProofEvent, "id" | "minutesAgo">[]>([]);
+  const poolRef = useRef<Omit<ProofEvent, "id" | "minutesAgo" | "kind">[]>([]);
   const indexRef = useRef(0);
 
   // Build shuffled pool once on mount
@@ -147,6 +148,7 @@ export default function LiveSocialProofFeed() {
       const event: ProofEvent = {
         ...template,
         id: uid(),
+        kind: Math.random() < 0.5 ? "donate" : "request",
         minutesAgo: Math.floor(Math.random() * 8) + 1,
       };
       setCurrent(event);
@@ -193,10 +195,16 @@ export default function LiveSocialProofFeed() {
 
   const label =
     language === "ar"
-      ? `شخص ما في ${from} أرسل "${svc}" إلى ${to}`
+      ? current.kind === "donate"
+        ? `فاعل خير من ${from} تبرع للتو بـ ${svc}`
+        : `شخص ما طلب مساعدة: ${svc}`
       : language === "tr"
-      ? `${from}'dan biri ${to}'a "${svc}" gönderdi`
-      : `Someone in ${from} just sent a "${svc}" to ${to}`;
+      ? current.kind === "donate"
+        ? `${from}'dan bir hayırsever az önce ${svc} bağışladı`
+        : `Biri az önce ${svc} desteği talep etti`
+      : current.kind === "donate"
+      ? `A donor from ${from} just donated ${svc}`
+      : `Someone just requested ${svc}`;
 
   const ago =
     language === "ar"
