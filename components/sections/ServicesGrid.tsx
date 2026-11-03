@@ -7,12 +7,12 @@ import { Plus, SearchX, ShoppingBag, Star } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import ServiceDetailsModal, {
-  SERVICE_CATALOG,
   type ServiceCategory,
   type ServiceItem,
 } from "@/components/modals/ServiceDetailsModal";
 import { toast } from "@/components/ui/Toast";
-import { SERVICE_STATS } from "@/lib/service-stats";
+import { getServiceStats } from "@/lib/service-stats";
+import { useCatalog } from "@/context/CatalogContext";
 
 type FilterId = "all" | ServiceCategory;
 
@@ -35,7 +35,7 @@ const SORT_OPTIONS: { id: SortKey; en: string; ar: string; tr: string }[] = [
 
 function sortServices(list: ServiceItem[], sortKey: SortKey): ServiceItem[] {
   const sorted = [...list];
-  if (sortKey === "popular") return sorted.sort((a, b) => SERVICE_STATS[b.id].reviews - SERVICE_STATS[a.id].reviews);
+  if (sortKey === "popular") return sorted.sort((a, b) => getServiceStats(b.id).reviews - getServiceStats(a.id).reviews);
   if (sortKey === "priceAsc") return sorted.sort((a, b) => a.price - b.price);
   return sorted.sort((a, b) => b.price - a.price);
 }
@@ -43,9 +43,9 @@ function sortServices(list: ServiceItem[], sortKey: SortKey): ServiceItem[] {
 const LOADING_DURATION_MS = 700;
 const SKELETON_COUNT = 6;
 
-function findVisualMatch(fileName: string): ServiceItem | undefined {
+function findVisualMatch(fileName: string, catalog: ServiceItem[]): ServiceItem | undefined {
   const tokens = fileName.toLowerCase().split(/[^a-z]+/).filter((token) => token.length >= 3);
-  return Object.values(SERVICE_CATALOG).find((service) =>
+  return catalog.find((service) =>
     tokens.some((token) => service.category === token || service.titleEn.toLowerCase().includes(token)),
   );
 }
@@ -53,6 +53,7 @@ function findVisualMatch(fileName: string): ServiceItem | undefined {
 export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   const { language } = useLanguage();
   const { addItem } = useCart();
+  const { services: catalog } = useCatalog();
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,11 +73,11 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
 
   const services = useMemo(() => {
     if (visualFileName !== null) {
-      const match = findVisualMatch(visualFileName);
+      const match = findVisualMatch(visualFileName, catalog);
       return match ? [match] : [];
     }
     const query = searchTerm.trim().toLowerCase();
-    const list = Object.values(SERVICE_CATALOG).filter((service) => {
+    const list = catalog.filter((service) => {
       const matchesFilter = activeFilter === "all" || service.category === activeFilter;
       if (!matchesFilter) return false;
       if (!query) return true;
@@ -86,7 +87,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
       return haystack.includes(query);
     });
     return sortServices(list, sortKey);
-  }, [searchTerm, activeFilter, visualFileName, sortKey]);
+  }, [searchTerm, activeFilter, visualFileName, sortKey, catalog]);
 
   const text = {
     heading: language === "ar" ? "خدماتنا" : language === "tr" ? "Hizmetlerimiz" : "Our services",
@@ -217,7 +218,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
             <AnimatePresence mode="popLayout">
               {services.map((service) => {
                 const isFree = service.price === 0;
-                const stats = SERVICE_STATS[service.id];
+                const stats = getServiceStats(service.id);
                 return (
                   <motion.div
                     key={service.id}

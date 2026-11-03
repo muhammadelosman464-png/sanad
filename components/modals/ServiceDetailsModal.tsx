@@ -28,6 +28,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import AuthModal from "@/components/modals/AuthModal";
 import { useCart } from "@/context/CartContext";
 import NumberInput from "@/components/ui/NumberInput";
+import { useCatalog } from "@/context/CatalogContext";
 
 /* ─── Service catalog ────────────────────────────────────────────────────── */
 
@@ -248,7 +249,8 @@ export default function ServiceDetailsModal({
   const [locationNote, setLocationNote] = useState<string>("");
   const [authOpen, setAuthOpen] = useState(false);
 
-  const service = serviceId ? SERVICE_CATALOG[serviceId] : null;
+  const { services } = useCatalog();
+  const service = serviceId ? services.find((item) => item.id === serviceId) ?? null : null;
 
   /* Reset on service change */
   useEffect(() => {

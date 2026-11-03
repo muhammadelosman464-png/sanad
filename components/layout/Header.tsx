@@ -9,7 +9,6 @@ import { ArrowLeft, Bell, Camera, Inbox, Loader2, Menu, Search, ShoppingBag, X }
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
-import ThemeToggle from "@/components/ui/ThemeToggle";
 import { toast } from "@/components/ui/Toast";
 
 type Panel = "inbox" | "notifications" | null;
@@ -217,7 +216,6 @@ export default function Header() {
               )}
             </button>
             <div className="hidden md:block"><LanguageSwitcher /></div>
-            <div className="hidden md:block"><ThemeToggle /></div>
 
             <AnimatePresence>
               {panel && (

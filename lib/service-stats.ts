@@ -18,3 +18,7 @@ export const SERVICE_STATS: Record<string, ServiceStats> = {
   request_help: { rating: 4.8, reviews: 1010 },
   heating: { rating: 4.8, reviews: 845 },
 };
+
+export function getServiceStats(id: string): ServiceStats {
+  return SERVICE_STATS[id] ?? { rating: 4.8, reviews: 0 };
+}
