@@ -9,6 +9,7 @@ import { ArrowLeft, Bell, Camera, Inbox, Loader2, Menu, Search, ShoppingBag, X }
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { toast } from "@/components/ui/Toast";
 
 type Panel = "inbox" | "notifications" | null;
@@ -17,6 +18,7 @@ interface PanelItem {
   id: string;
   kind: "inbox" | "notifications";
   topic: "message" | "delivery";
+  accepted?: boolean;
 }
 
 const SEED_ITEMS: PanelItem[] = [
@@ -103,7 +105,12 @@ export default function Header() {
 
   const deleteItem = (id: string) => setItems((current) => current.filter((item) => item.id !== id));
 
-  const copy = language === "ar" ? { placeholder: "ابحث عن خدمة أو مساعدة...", inbox: "الرسائل", alerts: "الإشعارات", menu: "القائمة", newMessage: "رسالة جديدة من فريق سَنَد", messageHint: "يسعدنا مساعدتك في طلبك القادم.", delivery: "تم تأكيد توصيل طلب", deliveryHint: "سيصلك إثبات التسليم قريباً.", back: "رجوع", remove: "حذف", contact: "تواصل / قبول", empty: "لا توجد عناصر حالياً", clearImage: "إزالة الصورة" } : language === "tr" ? { placeholder: "Hizmet veya destek ara...", inbox: "Mesajlar", alerts: "Bildirimler", menu: "Menü", newMessage: "Sanad ekibinden yeni mesaj", messageHint: "Bir sonraki siparişinizde size yardımcı olmaktan mutluluk duyarız.", delivery: "Sipariş teslimatı onaylandı", deliveryHint: "Teslimat kanıtı yakında gelecek.", back: "Geri", remove: "Sil", contact: "İletişim / Kabul", empty: "Şu anda öğe yok", clearImage: "Görseli kaldır" } : { placeholder: "Search services or support...", inbox: "Inbox", alerts: "Notifications", menu: "Menu", newMessage: "New message from Sanad", messageHint: "We are here to help with your next order.", delivery: "Order delivery confirmed", deliveryHint: "Your delivery proof is on its way.", back: "Back", remove: "Delete", contact: "Contact / Accept", empty: "Nothing here right now", clearImage: "Remove image" };
+  const acceptItem = (id: string) => {
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, accepted: true } : item)));
+    toast.success(CONTACT_TOAST);
+  };
+
+  const copy = language === "ar" ? { placeholder: "ابحث عن خدمة أو مساعدة...", inbox: "الرسائل", alerts: "الإشعارات", menu: "القائمة", newMessage: "رسالة جديدة من فريق سَنَد", messageHint: "يسعدنا مساعدتك في طلبك القادم.", delivery: "تم تأكيد توصيل طلب", deliveryHint: "سيصلك إثبات التسليم قريباً.", back: "رجوع", remove: "حذف", contact: "تواصل / قبول", accepted: "تم القبول", empty: "لا توجد عناصر حالياً", clearImage: "إزالة الصورة" } : language === "tr" ? { placeholder: "Hizmet veya destek ara...", inbox: "Mesajlar", alerts: "Bildirimler", menu: "Menü", newMessage: "Sanad ekibinden yeni mesaj", messageHint: "Bir sonraki siparişinizde size yardımcı olmaktan mutluluk duyarız.", delivery: "Sipariş teslimatı onaylandı", deliveryHint: "Teslimat kanıtı yakında gelecek.", back: "Geri", remove: "Sil", contact: "İletişim / Kabul", accepted: "Kabul edildi", empty: "Şu anda öğe yok", clearImage: "Görseli kaldır" } : { placeholder: "Search services or support...", inbox: "Inbox", alerts: "Notifications", menu: "Menu", newMessage: "New message from Sanad", messageHint: "We are here to help with your next order.", delivery: "Order delivery confirmed", deliveryHint: "Your delivery proof is on its way.", back: "Back", remove: "Delete", contact: "Contact / Accept", accepted: "Accepted", empty: "Nothing here right now", clearImage: "Remove image" };
 
   const inboxCount = items.filter((item) => item.kind === "inbox").length;
   const alertCount = items.filter((item) => item.kind === "notifications").length;
@@ -119,7 +126,7 @@ export default function Header() {
     "relative hidden sm:flex w-10 h-10 rounded-xl items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 dark:border-emerald-950/70 bg-white/90 dark:bg-[#07110d]/90 backdrop-blur-2xl">
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 dark:border-emerald-950/70 bg-[#fbf7ec]/90 dark:bg-[#1d3023]/90 backdrop-blur-2xl">
       <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-[78px] flex items-center gap-2 lg:gap-4">
           <button
@@ -215,6 +222,7 @@ export default function Header() {
                 </span>
               )}
             </button>
+            <ThemeToggle />
             <div className="hidden md:block"><LanguageSwitcher /></div>
 
             <AnimatePresence>
@@ -253,10 +261,11 @@ export default function Header() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => toast.success(CONTACT_TOAST)}
-                              className="rounded-lg bg-emerald-700 hover:bg-emerald-800 px-3 py-1.5 text-xs font-bold text-white transition"
+                              onClick={() => acceptItem(item.id)}
+                              disabled={item.accepted}
+                              className="rounded-lg bg-emerald-700 hover:bg-emerald-800 disabled:bg-slate-400 disabled:cursor-default px-3 py-1.5 text-xs font-bold text-white transition"
                             >
-                              {copy.contact}
+                              {item.accepted ? copy.accepted : copy.contact}
                             </button>
                           </div>
                         </motion.li>

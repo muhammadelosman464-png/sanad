@@ -9,7 +9,6 @@ import Footer from "@/components/layout/Footer";
 import ChatWidget from "@/components/chat/ChatWidget";
 import SupportFab from "@/components/layout/SupportFab";
 import { ToastContainer } from "@/components/ui/Toast";
-import LiveSocialProofFeed from "@/components/social/LiveSocialProofFeed";
 import { CartProvider } from "@/context/CartContext";
 import { CatalogProvider } from "@/context/CatalogContext";
 import CartDrawer from "@/components/cart/CartDrawer";
@@ -63,16 +62,17 @@ export default function RootLayout({
        * Two-layer overlay: slate-950 base + black/85 on top = ultra-dark.
        * REMINDER: Place logo.jpeg in /public/logo.jpeg
        */}
-      <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#07110d]`}>
+      <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#fbf7ec] dark:bg-[#1d3023]`}>
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden [perspective:1400px]" aria-hidden="true">
           <div className="absolute inset-[-8%] bg-[url('/assets/images/WhatsApp_Image_2026-11-04_at_1.20.46_AM.jpeg')] bg-center bg-contain bg-no-repeat opacity-60 [transform:rotateX(8deg)_rotateY(-10deg)_translateZ(-40px)] [transform-origin:center_center]" />
-          <div className="absolute inset-0 bg-slate-950/75" />
+          <div className="absolute inset-0 bg-[#fbf7ec]/80 dark:bg-[#132a1c]/85" />
         </div>
 
-        <div className="relative z-10 flex flex-col min-h-screen text-slate-100">
+        <div className="relative z-10 flex flex-col min-h-screen text-slate-900 dark:text-slate-100">
           <ThemeProvider
             attribute="class"
-            forcedTheme="dark"
+            defaultTheme="dark"
+            enableSystem={false}
             disableTransitionOnChange
           >
             <LanguageProvider>
@@ -90,8 +90,6 @@ export default function RootLayout({
               <ChatWidget />
               <MobileBottomNav />
 
-              {/* Live Social Proof Feed — bottom-start corner */}
-              <LiveSocialProofFeed />
 
                 <CartDrawer />
                 <ToastContainer />

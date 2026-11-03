@@ -38,6 +38,9 @@ export default function HeroSection() {
 
   return (
     <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-5">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-full [perspective:1200px]">
+        <div className="absolute inset-x-6 sm:inset-x-16 top-4 h-[85%] rounded-[40px] border border-[#ffd700]/20 bg-gradient-to-br from-[#ffd700]/10 via-transparent to-transparent [transform:rotateX(10deg)_rotateY(-6deg)] [transform-origin:top_center]" />
+      </div>
       <div className="pointer-events-none absolute -top-24 start-1/4 h-64 w-64 rounded-full bg-brand-400/20 blur-3xl" />
       <div className="relative max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
