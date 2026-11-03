@@ -224,7 +224,7 @@ export default function ServiceDetailsModal({
   onClose,
 }: ServiceDetailsModalProps) {
   const { language } = useLanguage();
-  const { addItem, openCart } = useCart();
+  const { addItem } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [customAmount, setCustomAmountState] = useState<string>("");
@@ -305,7 +305,6 @@ export default function ServiceDetailsModal({
     }
     addItem(service, parsedCustom > 0 ? parsedCustom : service.price);
     onClose();
-    openCart();
   };
 
   return (

@@ -247,6 +247,8 @@ export default function ChatWidget() {
               </a>
             </div>
 
+            <div className="px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800"><p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 mb-2">{language === "ar" ? "ماذا تحتاج اليوم؟" : language === "tr" ? "Bugün nasıl yardımcı olabiliriz?" : "How can we help today?"}</p><div className="flex flex-wrap gap-2">{(language === "ar" ? ["تتبع طلبي", "طلب مساعدة", "إرسال دعم"] : language === "tr" ? ["Siparişimi takip et", "Yardım iste", "Destek gönder"] : ["Track order", "Request support", "Send support"]).map((reply) => <button key={reply} onClick={() => setInput(reply)} className="rounded-full border border-emerald-200 dark:border-emerald-900 px-3 py-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition">{reply}</button>)}</div></div>
+
             {/* Message Thread */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50 dark:bg-slate-950/40">
               {messages.map((msg) => {

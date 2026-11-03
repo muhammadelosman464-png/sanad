@@ -192,6 +192,8 @@ export default function Footer() {
             </div>
           </div>
 
+          <div className="flex justify-center py-8 border-b border-slate-800"><div className="relative w-24 h-24 rounded-[28px] overflow-hidden ring-1 ring-emerald-500/30 shadow-2xl shadow-emerald-950/40"><img src="/logo.jpeg" alt="Sanad" className="w-full h-full object-cover" /></div></div>
+
           {/* Bottom Bar: Copyright & Founder Signature */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} Sanad (سَنَد). {t("allRightsReserved")}</p>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import HeroSection from "@/components/sections/HeroSection";
 import ServicesGrid from "@/components/sections/ServicesGrid";
 import FeaturesSection from "@/components/sections/FeaturesSection";
@@ -26,9 +26,15 @@ import CTASection from "@/components/sections/CTASection";
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState("");
 
+  useEffect(() => {
+    const handler = (event: Event) => setSearchTerm((event as CustomEvent<string>).detail);
+    window.addEventListener("sanad-search", handler);
+    return () => window.removeEventListener("sanad-search", handler);
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
-      <HeroSection onSearch={setSearchTerm} />
+      <HeroSection />
       <ServicesGrid searchTerm={searchTerm} />
       <FeaturesSection />
       <TestimonialsSection />
