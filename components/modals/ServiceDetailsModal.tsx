@@ -30,6 +30,8 @@ import { useCart } from "@/context/CartContext";
 
 /* ─── Service catalog ────────────────────────────────────────────────────── */
 
+export type ServiceCategory = "food" | "health" | "energy" | "gifts" | "support";
+
 export interface ServiceItem {
   id: string;
   titleEn: string;
@@ -43,6 +45,7 @@ export interface ServiceItem {
   accentClass: string;
   /** When true, show a custom amount input instead of quantity stepper */
   customAmount?: boolean;
+  category: ServiceCategory;
 }
 
 export const SERVICE_CATALOG: Record<string, ServiceItem> = {
@@ -56,8 +59,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "سلة متكاملة تحتوي على المواد الغذائية الأساسية: أرز وبقوليات وزيت وسكر ومعلبات. تكفي عائلة مكونة من 4 أفراد لمدة أسبوع. توصيل في نفس اليوم بواسطة مزود محلي معتمد.",
     descTr: "Pirinc, baklagiller, yag, seker ve konserve iceren curated sepet. 4 kisilik aile icin bir hafta yeterli. Onaylanmis yerel saglayici ile ayni gun teslimat.",
     price: 45.0,
-    imageUrl: "https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/6994944/pexels-photo-6994944.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-amber-500",
+    category: "food",
   },
   fuel: {
     id: "fuel",
@@ -68,8 +72,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "وقود للتدفئة (ديزل أو حطب) لأشهر الشتاء. يكفي لتدفئة منزل متوسط لأسبوعين. يوفره موزعون محليون معتمدون.",
     descTr: "Kis aylari icin isitma yakiti (mazot veya odun). Orta buyuklukte bir evi 2 hafta ısıtmaya yeter.",
     price: 60.0,
-    imageUrl: "https://images.unsplash.com/photo-1608889175123-8ee362201f81?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/39144594/pexels-photo-39144594.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-red-500",
+    category: "energy",
   },
   solar: {
     id: "solar",
@@ -80,8 +85,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "مجموعة طاقة شمسية أولية: لوحة 200 واط ووحدة تحكم وبطارية 100 أمبير. تكفي للإضاءة وشحن الهواتف. يشمل التركيب من قِبل فني معتمد.",
     descTr: "Baslangic gunes enerjisi kiti: 200W panel, sarj kontrolloru, 100Ah batarya. Aydinlatma ve telefon sarji icin. Teknisyen kurulumu dahil.",
     price: 350.0,
-    imageUrl: "https://images.unsplash.com/photo-1509391366360-2e959784a276?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/20782341/pexels-photo-20782341.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-yellow-500",
+    category: "energy",
   },
   health: {
     id: "health",
@@ -92,8 +98,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "زيارة منزلية من طبيب مرخص تشمل الكشف والتشخيص وصرف الوصفات الطبية. أو حزمة أدوية أساسية. متاحة خلال 3 ساعات.",
     descTr: "Lisansli doktor ev ziyareti: muayene, teshis ve recete. Veya temel ilac paketi. 3 saat icinde mevcut.",
     price: 55.0,
-    imageUrl: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/7579823/pexels-photo-7579823.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-emerald-500",
+    category: "health",
   },
   gifts: {
     id: "gifts",
@@ -104,8 +111,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "مجموعة هدايا فاخرة — عطورات راقية أو حلويات فاخرة أو صندوق هدايا أنيق. تُلفّف بشكل جميل مع بطاقة مكتوبة بخط يدك.",
     descTr: "Luxe hediye seti — premium parfumler, gurme tatlilar veya sik aksesuar kutusu. El yazisi kartla guzelce sarılır.",
     price: 75.0,
-    imageUrl: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/30399680/pexels-photo-30399680.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-purple-500",
+    category: "gifts",
   },
   flowers: {
     id: "flowers",
@@ -116,8 +124,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "باقات ورود طازجة منسّقة يدوياً توصّل إلى باب منزل عائلتك. مثالية للأعياد والمناسبات.",
     descTr: "Taze, el duzenlenmis mevsimlik buketler, ailenizin kapısına teslim. Dogum gunleri veya Bayram icin.",
     price: 35.0,
-    imageUrl: "https://images.unsplash.com/photo-1487530811015-780dcd42bc1e?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/38132275/pexels-photo-38132275.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-pink-500",
+    category: "gifts",
   },
   meals: {
     id: "meals",
@@ -128,8 +137,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "وجبات ساخنة بجودة المطعم من مطعم محلي شريك، توصّل طازجة إلى منزل عائلتك.",
     descTr: "Yerel ortak restoranlardan sicak yemekler, ailenizin evine taze teslim.",
     price: 28.0,
-    imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/6248880/pexels-photo-6248880.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-brand-500",
+    category: "food",
   },
   /* ── New 6 (Update 4) ── */
   direct_support: {
@@ -141,8 +151,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "أرسل دعماً مالياً مباشراً إلى مستفيد موثّق داخل سوريا. اختر المبلغ — 100% يصل للعائلة، مضمون بالضمان.",
     descTr: "Suriye'deki dogrulanmis bir aliciya dogrudan finansal aile destegi gonderin. %100 aileye ulasmasi garanti.",
     price: 50.0,
-    imageUrl: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/7951671/pexels-photo-7951671.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-rose-500",
+    category: "support",
     customAmount: true,
   },
   sponsorship: {
@@ -154,8 +165,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "تعهّد برعاية عائلة محتاجة بشكل شهري. يغطي دعمك المتكرر الغذاء والوقود والاحتياجات الأساسية. ألغِ في أي وقت.",
     descTr: "Ihtiyac sahibi bir aileyi aylik olarak sponsorlamaya taahhut edin. Gida, yakit ve temel ihtiyaclari karsilar. Istediginizde iptal edin.",
     price: 80.0,
-    imageUrl: "https://images.unsplash.com/photo-1511895426328-dc8714191011?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/3912425/pexels-photo-3912425.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-teal-500",
+    category: "support",
     customAmount: true,
   },
   urgent_medical: {
@@ -167,8 +179,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "موّل علاجاً طبياً عاجلاً لحالة محددة — عملية جراحية أو دخول مستشفى أو أدوية حيوية. موثّق من فريق طبي شريك. كل دولار مُتابَع.",
     descTr: "Belirli bir vaka icin acil tibbi tedaviyi finanse edin — ameliyat, hastaneye yatis veya kritik ilac. Ortak tibbi ekip tarafindan dogrulanmis.",
     price: 100.0,
-    imageUrl: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/6129870/pexels-photo-6129870.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-red-600",
+    category: "health",
     customAmount: true,
   },
   student_support: {
@@ -180,8 +193,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "ساعد طالباً جامعياً على دفع قسط دراسي أو تأمين مواصلاته اليومية. القليل يُحدث فارقاً — دعمك يُبقيه في التعليم.",
     descTr: "Universite ogrencisinin egitim taksitini veya ulasimini karsilayabilmesine yardim edin. Kucuk bir katki buyuk fark yaratir.",
     price: 40.0,
-    imageUrl: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/8199557/pexels-photo-8199557.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-indigo-500",
+    category: "support",
     customAmount: true,
   },
   request_help: {
@@ -193,8 +207,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "هل أنت أو عائلتك بحاجة إلى مساعدة؟ قدّم طلب دعم — غذاء أو دواء أو إغاثة طارئة. فريقنا المحلي سيراجع ويرد خلال 24 ساعة.",
     descTr: "Siz veya aileniz yardima mi ihtiyac duyuyor? Yardim talebi gonderin — gida, ilac veya acil destek. Yerel ekibimiz 24 saat icinde yanit verir.",
     price: 0.0,
-    imageUrl: "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/6646917/pexels-photo-6646917.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-slate-500",
+    category: "support",
   },
   heating: {
     id: "heating",
@@ -205,8 +220,9 @@ export const SERVICE_CATALOG: Record<string, ServiceItem> = {
     descAr: "حزمة شتاء متكاملة: ملابس دافئة (بالغون وأطفال) وبطانيات ووقود للتدفئة. توصّل قبل حلول موسم البرد. أولوية للعائلات الأكثر هشاشة.",
     descTr: "Komple kis paketi: sicak giysiler (yetiskin ve cocuklar), battaniyeler ve isitma yakiti. Soguk mevsim gelmeden teslim. Savunmasiz aileler onceliklidir.",
     price: 70.0,
-    imageUrl: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&auto=format&fit=crop&q=80",
+    imageUrl: "https://images.pexels.com/photos/6617753/pexels-photo-6617753.jpeg?auto=compress&cs=tinysrgb&w=900",
     accentClass: "bg-sky-500",
+    category: "energy",
   },
 };
 
@@ -249,13 +265,9 @@ export default function ServiceDetailsModal({
 
   /* ── Computed total ──────────────────────────────────────────────────── */
   const parsedCustom = parseFloat(customAmount) || 0;
-  const total = service
-    ? parsedCustom > 0
-      ? parsedCustom.toFixed(2)                    /* user typed a custom amount — always wins */
-      : service.customAmount
-      ? service.price.toFixed(2)                   /* custom-amount service, no input yet */
-      : (service.price * quantity).toFixed(2)      /* fixed-price * qty */
-    : "0.00";
+  const unitAmount = parsedCustom > 0 ? parsedCustom : service?.price ?? 0;
+  const effectiveQuantity = service?.customAmount ? 1 : quantity;
+  const total = (unitAmount * effectiveQuantity).toFixed(2);
 
   /* ── Translations ─────────────────────────────────────────────────────── */
   const T = {
@@ -303,7 +315,7 @@ export default function ServiceDetailsModal({
       setAuthOpen(true);
       return;
     }
-    addItem(service, parsedCustom > 0 ? parsedCustom : service.price);
+    addItem(service, unitAmount, effectiveQuantity);
     onClose();
   };
 
@@ -434,8 +446,8 @@ export default function ServiceDetailsModal({
                             <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-600 transition shadow-sm">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-xl font-black text-slate-900 dark:text-white w-8 text-center tabular-nums">{quantity}</span>
-                            <button onClick={() => setQuantity((q) => Math.min(10, q + 1))} className="w-8 h-8 rounded-full bg-brand-600 hover:bg-brand-700 flex items-center justify-center text-white transition shadow-md shadow-brand-500/30">
+                            <input type="number" min={1} max={99} value={quantity} aria-label={T.qty} onChange={(e) => setQuantity(Math.min(99, Math.max(1, Math.floor(Number(e.target.value) || 1))))} className="w-16 h-10 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-center text-lg font-black text-slate-900 dark:text-white tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                            <button onClick={() => setQuantity((q) => Math.min(99, q + 1))} className="w-8 h-8 rounded-full bg-brand-600 hover:bg-brand-700 flex items-center justify-center text-white transition shadow-md shadow-brand-500/30">
                               <Plus className="w-3.5 h-3.5" />
                             </button>
                           </div>

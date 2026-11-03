@@ -14,7 +14,7 @@ interface CartContextValue {
   totalItems: number;
   totalAmount: number;
   isOpen: boolean;
-  addItem: (service: ServiceItem, amount?: number) => void;
+  addItem: (service: ServiceItem, amount?: number, quantity?: number) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
@@ -28,16 +28,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
-  const addItem = (service: ServiceItem, amount = service.price) => {
+  const addItem = (service: ServiceItem, amount = service.price, quantity = 1) => {
     if (service.price === 0) return;
     setItems((current) => {
       const existing = current.find((item) => item.service.id === service.id);
       if (existing) {
         return current.map((item) =>
-          item.service.id === service.id ? { ...item, quantity: item.quantity + 1 } : item,
+          item.service.id === service.id
+            ? { ...item, amount, quantity: item.quantity + quantity }
+            : item,
         );
       }
-      return [...current, { service, quantity: 1, amount }];
+      return [...current, { service, quantity, amount }];
     });
   };
 
