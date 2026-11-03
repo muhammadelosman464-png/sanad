@@ -31,7 +31,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   const { language } = useLanguage();
   const { addItem } = useCart();
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
-  const [selected, setSelected] = useState<ServiceItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -170,11 +170,11 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
                     whileHover={{ y: -8 }}
                     role="button"
                     tabIndex={0}
-                    onClick={() => setSelected(service)}
+                    onClick={() => setSelectedId(service.id)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        setSelected(service);
+                        setSelectedId(service.id);
                       }
                     }}
                     className="group cursor-pointer rounded-3xl overflow-hidden bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border border-white/70 dark:border-white/10 shadow-xl shadow-slate-900/10 hover:shadow-2xl hover:shadow-brand-900/15 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
@@ -228,9 +228,8 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
       </div>
 
       <ServiceDetailsModal
-        service={selected}
-        isOpen={selected !== null}
-        onClose={() => setSelected(null)}
+        serviceId={selectedId}
+        onClose={() => setSelectedId(null)}
       />
     </section>
   );

@@ -163,7 +163,7 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 end-6 z-50">
+    <div className="fixed bottom-24 sm:bottom-6 end-6 z-50">
       {/* ── Floating Action Button ── */}
       {!isOpen && (
         <motion.button

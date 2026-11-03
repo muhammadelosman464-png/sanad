@@ -2,26 +2,91 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, CheckCircle2, Flame, Flower2, Gift, HandHeart, Heart, HelpCircle, ShieldCheck, ShoppingBasket, Stethoscope, Sun, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, HandHeart } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import RequestAssistanceModal, { AssistanceRequest } from "@/components/modals/RequestAssistanceModal";
 
-function HeroBackground() {
-  return <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true"><div className="absolute inset-0 bg-[url('/logo.jpeg')] bg-cover bg-center opacity-[0.065] dark:opacity-[0.035] [transform:perspective(1200px)_rotateX(5deg)_rotateY(-4deg)_scale(1.1)]" /><div className="absolute inset-0 bg-gradient-to-b from-[#f6faf7]/90 via-[#f6faf7]/80 to-[#f6faf7]/95 dark:from-[#07110d]/80 dark:via-[#07110d]/85 dark:to-[#07110d]/95" /><div className="absolute -top-32 start-[-10%] w-[55vw] h-[55vw] rounded-full bg-emerald-300/20 dark:bg-emerald-700/10 blur-[100px] animate-pulse-slow" /><div className="absolute bottom-0 end-[-8%] w-[45vw] h-[45vw] rounded-full bg-amber-300/20 dark:bg-amber-600/10 blur-[100px] animate-pulse-slow [animation-delay:2s]" /></div>;
-}
+const SEED_REQUESTS: AssistanceRequest[] = [
+  { id: "seed-1", message: "عائلة محتاجة تطلب مساعدة طبية", amount: 100 },
+  { id: "seed-2", message: "أم لثلاثة أطفال تطلب مواد غذائية", amount: 60 },
+  { id: "seed-3", message: "طالب جامعي يطلب دعماً للإيجار", amount: 150 },
+  { id: "seed-4", message: "أسرة نازحة تطلب تدفئة لفصل الشتاء", amount: 70 },
+];
 
 export default function HeroSection() {
-  const { t, language, direction } = useLanguage();
-  const [requestOpen, setRequestOpen] = useState(false);
-  const [requests, setRequests] = useState<AssistanceRequest[]>([
-    { id: "one", message: language === "ar" ? "عائلة تحتاج مساعدة طبية عاجلة" : "A family needs urgent medical support", amount: 100 },
-    { id: "two", message: language === "ar" ? "أم تطلب سلة غذائية لأطفالها" : "A mother requests a food basket for her children", amount: 45 },
-    { id: "three", message: language === "ar" ? "طالب يحتاج دعماً لأقساطه" : "A student needs help with tuition", amount: 80 },
-  ]);
-  const categories = [{ id: "food", icon: ShoppingBasket, name: language === "ar" ? "سلال غذائية" : "Food baskets" }, { id: "fuel", icon: Flame, name: language === "ar" ? "تدفئة" : "Heating" }, { id: "solar", icon: Sun, name: language === "ar" ? "طاقة شمسية" : "Solar energy" }, { id: "health", icon: Stethoscope, name: language === "ar" ? "رعاية صحية" : "Medical care" }, { id: "gifts", icon: Gift, name: language === "ar" ? "هدايا" : "Gifts" }, { id: "flowers", icon: Flower2, name: language === "ar" ? "ورود" : "Flowers" }, { id: "meals", icon: UtensilsCrossed, name: language === "ar" ? "وجبات" : "Meals" }];
-  const ArrowIcon = direction === "rtl" ? ArrowLeft : ArrowRight;
+  const { language } = useLanguage();
+  const [requests, setRequests] = useState<AssistanceRequest[]>(SEED_REQUESTS);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  const addRequest = (request: AssistanceRequest) => setRequests((current) => [request, ...current]);
+  const text = {
+    subtitle: language === "ar" ? "سَندك في الغربة" : language === "tr" ? "Gurbetteki güvenceniz" : "Your support abroad",
+    heading:
+      language === "ar"
+        ? "ابدأ بدعم عائلتك واطلب المساعدة"
+        : language === "tr"
+        ? "Ailenizi destekleyin ve yardım isteyin"
+        : "Start supporting your family and ask for help",
+    sendSupport: language === "ar" ? "أرسل الدعم" : language === "tr" ? "Destek gönder" : "Send support",
+    requestAssistance: language === "ar" ? "طلب مساعدة" : language === "tr" ? "Yardım talep et" : "Request assistance",
+    tickerLabel: language === "ar" ? "طلبات حديثة" : language === "tr" ? "Son talepler" : "Latest requests",
+    supportNow: language === "ar" ? "ساهم الآن" : language === "tr" ? "Şimdi destek ol" : "Support now",
+  };
 
-  return <section className="relative overflow-hidden pt-14 pb-20 sm:pt-20 sm:pb-28 px-4 sm:px-6 lg:px-8"><HeroBackground /><div className="relative z-10 max-w-6xl mx-auto"><div className="text-center max-w-4xl mx-auto"><motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/75 dark:bg-slate-900/75 border border-emerald-100 dark:border-emerald-900/50 shadow-lg backdrop-blur-md mb-7"><HandHeart className="w-4 h-4 text-emerald-600" /><span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">{t("heroBadge")}</span><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /></motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .1 }} className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-slate-950 dark:text-white leading-[1.1]"><span className="block">{t("heroTitle1")}</span><span className="block mt-2 bg-gradient-to-r from-emerald-700 via-teal-600 to-amber-500 dark:from-emerald-300 dark:via-teal-300 dark:to-amber-300 bg-clip-text text-transparent">{t("heroTitle2")}</span></motion.h1><motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .25 }} className="max-w-3xl mx-auto mt-6 text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">{t("heroSubtitle")}</motion.p><div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8"><a href="#services" className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20 transition hover:-translate-y-0.5">{t("heroCtaPrimary")}<ArrowIcon className="w-4 h-4" /></a><button onClick={() => setRequestOpen(true)} className="w-full sm:w-auto px-6 py-3.5 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-white/70 dark:bg-slate-900/70 text-emerald-800 dark:text-emerald-300 font-black text-sm flex items-center justify-center gap-2 transition hover:bg-emerald-50 dark:hover:bg-emerald-950/40"><HelpCircle className="w-4 h-4" />{language === "ar" ? "اطلب مساعدة" : language === "tr" ? "Yardım iste" : "Request assistance"}</button></div></div><div className="mt-12 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl overflow-hidden"><div className="flex w-max animate-marquee hover:[animation-play-state:paused]">{[...requests, ...requests].map((request, index) => <div key={`${request.id}-${index}`} className="flex items-center gap-3 px-6 py-3.5 border-e border-slate-200 dark:border-slate-800 text-sm whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /><span className="font-semibold text-slate-700 dark:text-slate-200">{request.message}</span><span className="font-black text-emerald-700 dark:text-emerald-400">${request.amount}</span><span className="text-xs font-bold text-amber-600">{language === "ar" ? "ساهم الآن" : "Support now"}</span></div>)}</div></div><div className="flex flex-wrap items-center justify-center gap-2.5 mt-7">{categories.map((category) => { const Icon = category.icon; return <a key={category.id} href="#services" className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/75 dark:bg-slate-900/75 border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-700 transition"><Icon className="w-3.5 h-3.5 text-emerald-600" />{category.name}</a>; })}</div><div className="grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-12 pt-6 border-t border-slate-200/70 dark:border-slate-800/70"><div className="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold"><Heart className="w-4 h-4 text-rose-500" />{t("statUsers")}</div><div className="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold"><CheckCircle2 className="w-4 h-4 text-emerald-500" />{t("statProviders")}</div><div className="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold"><ShieldCheck className="w-4 h-4 text-brand-500" />{t("statEscrow")}</div></div></div><RequestAssistanceModal isOpen={requestOpen} onClose={() => setRequestOpen(false)} onSubmit={addRequest} /></section>;
+  const addRequest = (request: AssistanceRequest) => {
+    setRequests((current) => [request, ...current]);
+  };
+
+  return (
+    <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-5">
+      <div className="pointer-events-none absolute -top-24 start-1/4 h-64 w-64 rounded-full bg-brand-400/20 blur-3xl" />
+      <div className="relative max-w-7xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-center">
+          <p className="text-xs sm:text-sm font-medium tracking-wide text-brand-700 dark:text-brand-300 mb-2">{text.subtitle}</p>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-[1.2] text-slate-900 dark:text-white mb-4">
+            {text.heading}
+          </h1>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#services"
+              className="inline-flex items-center gap-2 rounded-full bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold px-5 py-2.5 shadow-lg shadow-brand-700/25 transition-all hover:scale-[1.03] active:scale-[0.98]"
+            >
+              {text.sendSupport}
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-brand-300 dark:border-brand-700 bg-white/70 dark:bg-slate-900/60 text-brand-800 dark:text-brand-200 text-sm font-semibold px-5 py-2.5 backdrop-blur hover:bg-white dark:hover:bg-slate-900 transition-all hover:scale-[1.03] active:scale-[0.98]"
+            >
+              <HandHeart className="w-4 h-4" />
+              {text.requestAssistance}
+            </button>
+          </div>
+        </motion.div>
+
+        <div className="mt-5 flex items-center gap-3 overflow-hidden rounded-full border border-white/70 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl shadow-md py-2 ps-4">
+          <span className="shrink-0 rounded-full bg-brand-700 px-3 py-1 text-xs font-bold text-white">{text.tickerLabel}</span>
+          <div className="relative flex-1 overflow-hidden">
+            <div className="flex w-max animate-marquee gap-10 whitespace-nowrap">
+              {[...requests, ...requests].map((request, index) => (
+                <span key={`${request.id}-${index}`} className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  <span className="font-medium">{request.message}</span>
+                  <span className="rounded-md bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-xs font-bold text-amber-800 dark:text-amber-300 tabular-nums">
+                    ${request.amount}
+                  </span>
+                  <span className="text-xs font-semibold text-brand-700 dark:text-brand-300">{text.supportNow}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <RequestAssistanceModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSubmit={addRequest}
+      />
+    </section>
+  );
 }

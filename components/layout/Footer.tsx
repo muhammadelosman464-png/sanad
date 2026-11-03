@@ -31,20 +31,12 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8 pb-12 border-b border-slate-800">
             {/* Column 1: Brand Info & Vision */}
             <div className="lg:col-span-2 space-y-5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-md shrink-0">
-                  <img
-                    src="/logo.jpg.jpg"
-                    alt="Sanad (سَنَد)"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div>
-                  <span className="text-xl font-black text-white flex items-center gap-1.5">
-                    <span>Sanad</span>
-                    <span className="text-brand-400 font-arabic text-xl font-bold">سَنَد</span>
-                  </span>
-                </div>
+              <div className="flex items-center">
+                <img
+                  src="/logo.jpeg"
+                  alt="Sanad"
+                  className="h-16 w-auto rounded-2xl bg-white p-1.5 object-contain shadow-md"
+                />
               </div>
 
               <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
