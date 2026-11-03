@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, Bell, Camera, Inbox, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, Bell, Camera, Inbox, Loader2, Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
@@ -27,6 +27,8 @@ const SEED_ITEMS: PanelItem[] = [
 
 const CONTACT_TOAST = "سيتم التواصل معك في أقرب وقت";
 
+const VISUAL_SEARCH_DELAY_MS = 1500;
+
 export default function Header() {
   const { language } = useLanguage();
   const { totalItems, openCart } = useCart();
@@ -37,6 +39,27 @@ export default function Header() {
   const [items, setItems] = useState<PanelItem[]>(SEED_ITEMS);
   const panelRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const [visualPreview, setVisualPreview] = useState<string | null>(null);
+  const [visualLoading, setVisualLoading] = useState(false);
+  const visualTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      if ((event as CustomEvent<string | null>).detail !== null) return;
+      clearTimeout(visualTimerRef.current);
+      setVisualPreview(null);
+      setVisualLoading(false);
+    };
+    window.addEventListener("sanad-visual-search", handler);
+    return () => window.removeEventListener("sanad-visual-search", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!visualPreview) return;
+    return () => URL.revokeObjectURL(visualPreview);
+  }, [visualPreview]);
+
+  useEffect(() => () => clearTimeout(visualTimerRef.current), []);
 
   useEffect(() => {
     const handler = (event: Event) => setQuery((event as CustomEvent<string>).detail);
@@ -52,21 +75,36 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const visualSearchText = language === "ar" ? "جارٍ البحث بالصورة..." : language === "tr" ? "Görselle aranıyor..." : "Searching by image...";
+  const dispatchVisualSearch = (fileName: string | null) =>
+    window.dispatchEvent(new CustomEvent("sanad-visual-search", { detail: fileName }));
 
   const handleVisualSearch = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files?.[0]) toast.success(visualSearchText);
+    const file = event.target.files?.[0];
     event.target.value = "";
+    if (!file) return;
+    clearTimeout(visualTimerRef.current);
+    setVisualPreview(URL.createObjectURL(file));
+    setVisualLoading(true);
+    visualTimerRef.current = setTimeout(() => {
+      setVisualLoading(false);
+      dispatchVisualSearch(file.name);
+    }, VISUAL_SEARCH_DELAY_MS);
+  };
+
+  const clearVisualSearch = () => {
+    clearTimeout(visualTimerRef.current);
+    dispatchVisualSearch(null);
   };
 
   const updateSearch = (value: string) => {
     setQuery(value);
+    if (visualPreview) clearVisualSearch();
     window.dispatchEvent(new CustomEvent("sanad-search", { detail: value }));
   };
 
   const deleteItem = (id: string) => setItems((current) => current.filter((item) => item.id !== id));
 
-  const copy = language === "ar" ? { placeholder: "ابحث عن خدمة أو مساعدة...", inbox: "الرسائل", alerts: "الإشعارات", menu: "القائمة", newMessage: "رسالة جديدة من فريق سَنَد", messageHint: "يسعدنا مساعدتك في طلبك القادم.", delivery: "تم تأكيد توصيل طلب", deliveryHint: "سيصلك إثبات التسليم قريباً.", back: "رجوع", remove: "حذف", contact: "تواصل / قبول", empty: "لا توجد عناصر حالياً" } : language === "tr" ? { placeholder: "Hizmet veya destek ara...", inbox: "Mesajlar", alerts: "Bildirimler", menu: "Menü", newMessage: "Sanad ekibinden yeni mesaj", messageHint: "Bir sonraki siparişinizde size yardımcı olmaktan mutluluk duyarız.", delivery: "Sipariş teslimatı onaylandı", deliveryHint: "Teslimat kanıtı yakında gelecek.", back: "Geri", remove: "Sil", contact: "İletişim / Kabul", empty: "Şu anda öğe yok" } : { placeholder: "Search services or support...", inbox: "Inbox", alerts: "Notifications", menu: "Menu", newMessage: "New message from Sanad", messageHint: "We are here to help with your next order.", delivery: "Order delivery confirmed", deliveryHint: "Your delivery proof is on its way.", back: "Back", remove: "Delete", contact: "Contact / Accept", empty: "Nothing here right now" };
+  const copy = language === "ar" ? { placeholder: "ابحث عن خدمة أو مساعدة...", inbox: "الرسائل", alerts: "الإشعارات", menu: "القائمة", newMessage: "رسالة جديدة من فريق سَنَد", messageHint: "يسعدنا مساعدتك في طلبك القادم.", delivery: "تم تأكيد توصيل طلب", deliveryHint: "سيصلك إثبات التسليم قريباً.", back: "رجوع", remove: "حذف", contact: "تواصل / قبول", empty: "لا توجد عناصر حالياً", clearImage: "إزالة الصورة" } : language === "tr" ? { placeholder: "Hizmet veya destek ara...", inbox: "Mesajlar", alerts: "Bildirimler", menu: "Menü", newMessage: "Sanad ekibinden yeni mesaj", messageHint: "Bir sonraki siparişinizde size yardımcı olmaktan mutluluk duyarız.", delivery: "Sipariş teslimatı onaylandı", deliveryHint: "Teslimat kanıtı yakında gelecek.", back: "Geri", remove: "Sil", contact: "İletişim / Kabul", empty: "Şu anda öğe yok", clearImage: "Görseli kaldır" } : { placeholder: "Search services or support...", inbox: "Inbox", alerts: "Notifications", menu: "Menu", newMessage: "New message from Sanad", messageHint: "We are here to help with your next order.", delivery: "Order delivery confirmed", deliveryHint: "Your delivery proof is on its way.", back: "Back", remove: "Delete", contact: "Contact / Accept", empty: "Nothing here right now", clearImage: "Remove image" };
 
   const inboxCount = items.filter((item) => item.kind === "inbox").length;
   const alertCount = items.filter((item) => item.kind === "notifications").length;
@@ -111,14 +149,35 @@ export default function Header() {
 
           <input ref={imageInputRef} type="file" accept="image/*" capture="environment" onChange={handleVisualSearch} className="hidden" aria-hidden="true" tabIndex={-1} />
           <div className="relative flex-1 max-w-2xl mx-auto">
-            <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            {visualPreview ? (
+              <div className="absolute start-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full overflow-hidden ring-2 ring-emerald-500/60 z-10">
+                <img src={visualPreview} alt="" className="w-full h-full object-cover" />
+                {visualLoading && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-slate-950/60">
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  </span>
+                )}
+              </div>
+            ) : (
+              <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            )}
             <input
               value={query}
               onChange={(event) => updateSearch(event.target.value)}
               placeholder={copy.placeholder}
               aria-label={copy.placeholder}
-              className="w-full h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-900/80 ps-12 pe-14 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition"
+              className={`w-full h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100/80 dark:bg-slate-900/80 ps-12 ${visualPreview ? "pe-24" : "pe-14"} text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition`}
             />
+            {visualPreview && (
+              <button
+                type="button"
+                onClick={clearVisualSearch}
+                aria-label={copy.clearImage}
+                className="absolute end-11 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-rose-500 hover:bg-white dark:hover:bg-slate-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               className="absolute end-2 top-2 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-emerald-600 hover:bg-white dark:hover:bg-slate-800 transition"

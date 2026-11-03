@@ -27,6 +27,7 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import AuthModal from "@/components/modals/AuthModal";
 import { useCart } from "@/context/CartContext";
+import NumberInput from "@/components/ui/NumberInput";
 
 /* ─── Service catalog ────────────────────────────────────────────────────── */
 
@@ -446,7 +447,7 @@ export default function ServiceDetailsModal({
                             <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-8 rounded-full bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-600 transition shadow-sm">
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <input type="number" min={1} max={99} value={quantity} aria-label={T.qty} onChange={(e) => setQuantity(Math.min(99, Math.max(1, Math.floor(Number(e.target.value) || 1))))} className="w-16 h-10 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-center text-lg font-black text-slate-900 dark:text-white tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                            <NumberInput integer max={99} value={quantity} label={T.qty} onCommit={setQuantity} className="w-16 h-10 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-center text-lg font-black text-slate-900 dark:text-white tabular-nums focus:outline-none focus:ring-2 focus:ring-brand-500" />
                             <button onClick={() => setQuantity((q) => Math.min(99, q + 1))} className="w-8 h-8 rounded-full bg-brand-600 hover:bg-brand-700 flex items-center justify-center text-white transition shadow-md shadow-brand-500/30">
                               <Plus className="w-3.5 h-3.5" />
                             </button>

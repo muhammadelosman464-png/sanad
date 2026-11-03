@@ -14,13 +14,19 @@ import {
   Info,
   ExternalLink,
   Heart,
+  LayoutDashboard,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { toast } from "@/components/ui/Toast";
 import AboutUsModal from "@/components/modals/AboutUsModal";
+import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
+
+const APP_COMING_SOON_MESSAGE = "جاري تجهيز التطبيق، سيتم الإطلاق قريباً!";
 
 export default function Footer() {
   const { t, language } = useLanguage();
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
   return (
     <>
       <footer className="w-full bg-slate-950 text-slate-300 border-t border-slate-800 relative z-20 overflow-hidden">
@@ -191,11 +197,11 @@ export default function Footer() {
                 <p className="text-sm text-slate-400 mt-1">Get the Sanad app on iOS and Android for a faster experience</p>
               </div>
               <div className="flex flex-wrap justify-center gap-3">
-                <button type="button" className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
+                <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
                   <span className="block text-[10px] text-slate-300">Download on the</span>
                   <span className="block text-sm font-bold">App Store</span>
                 </button>
-                <button type="button" className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
+                <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-xl bg-black border border-slate-600 px-5 py-2.5 text-start text-white hover:border-emerald-400 transition">
                   <span className="block text-[10px] text-slate-300">Get it on</span>
                   <span className="block text-sm font-bold">Google Play</span>
                 </button>
@@ -207,6 +213,14 @@ export default function Footer() {
           {/* Bottom Bar: Copyright & Founder Signature */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© {new Date().getFullYear()} Sanad (سَنَد). {t("allRightsReserved")}</p>
+            <button
+              type="button"
+              onClick={() => setAdminOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-600/50 bg-emerald-900/30 px-4 py-2 text-sm font-bold text-emerald-300 hover:bg-emerald-800/50 hover:text-white transition"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>{language === "ar" ? "لوحة التحكم" : language === "tr" ? "Yönetim paneli" : "Admin Panel"}</span>
+            </button>
             <p className="flex items-center gap-1.5">
               <span>Architected with excellence for global residents & ventures</span>
             </p>
@@ -219,6 +233,7 @@ export default function Footer() {
         isOpen={aboutModalOpen}
         onClose={() => setAboutModalOpen(false)}
       />
+      <AdminDashboardModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
     </>
   );
 }

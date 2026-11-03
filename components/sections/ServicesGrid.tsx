@@ -27,12 +27,26 @@ const FILTERS: { id: FilterId; en: string; ar: string; tr: string }[] = [
 const LOADING_DURATION_MS = 700;
 const SKELETON_COUNT = 6;
 
+function findVisualMatch(fileName: string): ServiceItem | undefined {
+  const tokens = fileName.toLowerCase().split(/[^a-z]+/).filter((token) => token.length >= 3);
+  return Object.values(SERVICE_CATALOG).find((service) =>
+    tokens.some((token) => service.category === token || service.titleEn.toLowerCase().includes(token)),
+  );
+}
+
 export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   const { language } = useLanguage();
   const { addItem } = useCart();
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [visualFileName, setVisualFileName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (event: Event) => setVisualFileName((event as CustomEvent<string | null>).detail);
+    window.addEventListener("sanad-visual-search", handler);
+    return () => window.removeEventListener("sanad-visual-search", handler);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), LOADING_DURATION_MS);
@@ -40,6 +54,10 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   }, []);
 
   const services = useMemo(() => {
+    if (visualFileName !== null) {
+      const match = findVisualMatch(visualFileName);
+      return match ? [match] : [];
+    }
     const query = searchTerm.trim().toLowerCase();
     return Object.values(SERVICE_CATALOG).filter((service) => {
       const matchesFilter = activeFilter === "all" || service.category === activeFilter;
@@ -50,7 +68,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [searchTerm, activeFilter]);
+  }, [searchTerm, activeFilter, visualFileName]);
 
   const text = {
     heading: language === "ar" ? "خدماتنا" : language === "tr" ? "Hizmetlerimiz" : "Our services",
@@ -66,6 +84,8 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
         : language === "tr"
         ? "Başka bir arama deneyin veya farklı bir kategori seçin"
         : "Try another search term or pick a different category",
+    visualEmptyTitle: language === "ar" ? "لم يتم العثور على المنتج" : language === "tr" ? "Ürün bulunamadı" : "No product found",
+    visualEmptyHint: language === "ar" ? "جرّب صورة أخرى أو ابحث بالاسم" : language === "tr" ? "Başka bir fotoğraf deneyin veya isimle arayın" : "Try another photo or search by name",
     reset: language === "ar" ? "عرض كل الخدمات" : language === "tr" ? "Tüm hizmetleri göster" : "Show all services",
     viewDetails: language === "ar" ? "عرض التفاصيل" : language === "tr" ? "Detayları gör" : "View details",
     addToCart: language === "ar" ? "أضف إلى السلة" : language === "tr" ? "Sepete ekle" : "Add to cart",
@@ -81,6 +101,11 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
     language === "ar" ? service.descAr : language === "tr" ? service.descTr : service.descEn;
   const labelFor = (filter: (typeof FILTERS)[number]) =>
     language === "ar" ? filter.ar : language === "tr" ? filter.tr : filter.en;
+
+  const selectFilter = (filter: FilterId) => {
+    setActiveFilter(filter);
+    window.dispatchEvent(new CustomEvent("sanad-visual-search", { detail: null }));
+  };
 
   const handleAdd = (event: React.MouseEvent, service: ServiceItem) => {
     event.stopPropagation();
@@ -103,7 +128,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
                 <button
                   key={filter.id}
                   type="button"
-                  onClick={() => setActiveFilter(filter.id)}
+                  onClick={() => selectFilter(filter.id)}
                   aria-pressed={active}
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                     active
@@ -144,11 +169,11 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
             <div className="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-brand-900/40 flex items-center justify-center mb-5">
               <SearchX className="w-8 h-8 text-brand-600 dark:text-brand-400" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{text.emptyTitle}</h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">{text.emptyHint}</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{visualFileName !== null ? text.visualEmptyTitle : text.emptyTitle}</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 max-w-sm">{visualFileName !== null ? text.visualEmptyHint : text.emptyHint}</p>
             <button
               type="button"
-              onClick={() => setActiveFilter("all")}
+              onClick={() => selectFilter("all")}
               className="rounded-full bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold px-6 py-2.5 transition"
             >
               {text.reset}
