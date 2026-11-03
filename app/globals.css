@@ -1,0 +1,168 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties ─────────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Force dark-first design — background is always near-black */
+    --background: 222 47% 4%;
+    --foreground: 210 40% 96%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+  }
+
+  /* Smooth font rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Respect reduced-motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ── Global Layout ─────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #020817; /* slate-950 — guaranteed dark even before CSS vars load */
+  color: hsl(var(--foreground));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+}
+
+/* ── Glassmorphism Utilities ───────────────────────────────────────────── */
+@layer components {
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.32);
+  }
+
+  .dark .glass-panel {
+    background: rgba(15, 23, 42, 0.72);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* RTL-aware text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ── Custom Animations ─────────────────────────────────────────────────── */
+@layer utilities {
+  /* Slow ambient pulse used by the hero background blobs */
+  .animate-pulse-slow {
+    animation: pulse-slow 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+  }
+
+  /* Gentle float (used on badge elements) */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-10px); }
+  }
+
+  /* Shimmer skeleton loading */
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+}
+
+/* ── Custom Scrollbars ─────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.65);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+/* ── RTL-specific overrides ────────────────────────────────────────────── */
+[dir="rtl"] {
+  /* Ensure list bullets appear on the right side */
+  ul, ol {
+    padding-inline-start: 1.5rem;
+    padding-inline-end: 0;
+  }
+}
+
+/* ── Selection highlight ───────────────────────────────────────────────── */
+::selection {
+  background: rgba(2, 132, 199, 0.25);
+  color: inherit;
+}
+
+::-moz-selection {
+  background: rgba(2, 132, 199, 0.25);
+  color: inherit;
+}
+
+/* ── Focus ring (accessible) ───────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #0284c7;
+  outline-offset: 3px;
+  border-radius: 6px;
+}

@@ -1,0 +1,43 @@
+# ==============================================================================
+# Sanad (سَنَد) — .gitignore
+# ==============================================================================
+
+# ── 🔐 SECRETS — never commit these ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Next.js build output ──────────────────────────────────────────────────────
+.next/
+out/
+
+# ── Node modules ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Vercel deployment ─────────────────────────────────────────────────────────
+.vercel
+
+# ── TypeScript build info ─────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── OS & editor artifacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/settings.json
+
+# ── Debug & logs ──────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Test coverage ─────────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
