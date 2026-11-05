@@ -130,17 +130,37 @@ export default function RequestAssistanceModal({
       }
 
       // Real Supabase insert into `help_requests`
-      const { error: insertError } = await supabase.from("help_requests").insert([
+      let insertError: any = null;
+
+      // Primary insert with exact requested columns: { full_name, phone, request_text }
+      const primaryRes = await supabase.from("help_requests").insert([
         {
-          user_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
-          user_phone: phone.trim(),
-          message: message.trim(),
+          full_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
+          phone: phone.trim(),
+          request_text: message.trim(),
           amount_usd: amount || 0,
-          user_email: userEmail,
           user_id: currentUserId,
           status: "pending",
         },
       ]);
+
+      insertError = primaryRes.error;
+
+      // Fallback: If table uses user_name, user_phone, message schema
+      if (insertError && (insertError.message?.includes("column") || insertError.code === "PGRST204")) {
+        const fallbackRes = await supabase.from("help_requests").insert([
+          {
+            user_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
+            user_phone: phone.trim(),
+            message: message.trim(),
+            amount_usd: amount || 0,
+            user_email: userEmail,
+            user_id: currentUserId,
+            status: "pending",
+          },
+        ]);
+        insertError = fallbackRes.error;
+      }
 
       if (insertError) {
         console.error("Failed to insert help request into Supabase:", insertError);

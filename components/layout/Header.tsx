@@ -11,6 +11,7 @@ import {
   Camera,
   ChevronDown,
   Inbox,
+  LayoutDashboard,
   Loader2,
   LogIn,
   LogOut,
@@ -28,6 +29,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { toast } from "@/components/ui/Toast";
 import { supabase, signOutUser, syncUserProfile } from "@/lib/supabase/client";
 import AuthModal from "@/components/modals/AuthModal";
+import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
 
 type Panel = "inbox" | "notifications" | null;
 
@@ -61,6 +63,7 @@ export default function Header() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   // Dynamic Help Requests from Supabase
   const [helpRequests, setHelpRequests] = useState<HelpNotification[]>([]);
@@ -249,6 +252,12 @@ export default function Header() {
   const pendingRequests = helpRequests.filter((r) => r.status === "pending");
   const pendingCount = pendingRequests.length;
 
+  const showAdminButton =
+    authUser?.email?.toLowerCase() === "muhammadelosman464@gmail.com" ||
+    authUser?.email?.toLowerCase() === "digty4@gmail.com" ||
+    (typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"));
+
   const iconButtonClass =
     "relative hidden sm:flex w-10 h-10 rounded-xl items-center justify-center text-slate-200 hover:bg-white/10 transition";
 
@@ -348,6 +357,20 @@ export default function Header() {
                 )}
               </button>
 
+              {/* Admin Dashboard Button */}
+              {showAdminButton && (
+                <button
+                  onClick={() => setAdminOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#e5c158] to-[#b8930a] text-[#1d3023] font-black text-xs shadow-lg shadow-[#d4af37]/25 hover:brightness-110 active:scale-95 transition"
+                  title={language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">
+                    {language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}
+                  </span>
+                </button>
+              )}
+
               {/* Cart Button */}
               <button
                 onClick={openCart}
@@ -384,6 +407,21 @@ export default function Header() {
                         {authUser.email}
                       </p>
                       <hr className="border-[#d4af37]/15 my-1" />
+                      {showAdminButton && (
+                        <>
+                          <button
+                            onClick={() => {
+                              setUserMenuOpen(false);
+                              setAdminOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#d4af37] hover:bg-[#d4af37]/15 transition font-semibold"
+                          >
+                            <LayoutDashboard className="w-4 h-4" />
+                            <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}</span>
+                          </button>
+                          <hr className="border-[#d4af37]/15 my-1" />
+                        </>
+                      )}
                       <button
                         onClick={async () => {
                           await signOutUser();
@@ -497,6 +535,18 @@ export default function Header() {
           {/* Mobile nav */}
           {menuOpen && (
             <nav className="pb-4 flex flex-wrap gap-2 border-t border-white/10 pt-3">
+              {showAdminButton && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAdminOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-full bg-[#d4af37] text-[#1d3023] text-sm font-black flex items-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}</span>
+                </button>
+              )}
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -514,6 +564,9 @@ export default function Header() {
 
       {/* Auth Modal renders cleanly into document.body via createPortal */}
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} />
+
+      {/* Admin Dashboard Modal */}
+      <AdminDashboardModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
     </>
   );
 }

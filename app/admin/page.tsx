@@ -13,9 +13,11 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
 
-  const ADMIN_EMAIL = (
-    process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com"
-  ).toLowerCase();
+  const ADMIN_EMAILS = [
+    (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com").toLowerCase(),
+    "digty4@gmail.com",
+    "muhammadelosman464@gmail.com",
+  ];
 
   useEffect(() => {
     if (!supabase) {
@@ -23,10 +25,19 @@ export default function AdminPage() {
       return;
     }
 
+    const checkAdmin = (userEmail: string | null) => {
+      if (!userEmail) return false;
+      return (
+        ADMIN_EMAILS.includes(userEmail.toLowerCase()) ||
+        (typeof window !== "undefined" &&
+          (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"))
+      );
+    };
+
     supabase.auth.getUser().then(({ data }) => {
       const userEmail = data.user?.email?.toLowerCase() || null;
       setEmail(userEmail);
-      setIsAdmin(userEmail === ADMIN_EMAIL);
+      setIsAdmin(checkAdmin(userEmail));
       setLoading(false);
     });
 
@@ -35,12 +46,12 @@ export default function AdminPage() {
     } = supabase.auth.onAuthStateChange((_, session) => {
       const userEmail = session?.user?.email?.toLowerCase() || null;
       setEmail(userEmail);
-      setIsAdmin(userEmail === ADMIN_EMAIL);
+      setIsAdmin(checkAdmin(userEmail));
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [ADMIN_EMAIL]);
+  }, []);
 
   if (loading) {
     return (

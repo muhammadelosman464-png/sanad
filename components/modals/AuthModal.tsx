@@ -28,6 +28,7 @@ import {
   signInWithEmail,
   signUpWithEmail,
   isSupabaseConfigured,
+  supabase,
 } from "@/lib/supabase/client";
 
 type Mode = "login" | "register";
@@ -197,13 +198,33 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
         }
       } else {
         const result = await signUpWithEmail(email, password, {
-          full_name: name,
-          phone: phone,
-          display_name: name,
+          full_name: name.trim(),
+          phone: phone.trim(),
+          display_name: name.trim(),
         });
         if (!result.success) {
           setErrorMsg(result.error ?? "Registration failed");
         } else {
+          // Explicitly save into profiles table immediately
+          if (supabase) {
+            try {
+              const { data: authData } = await supabase.auth.getUser();
+              if (authData?.user) {
+                await supabase.from("profiles").upsert(
+                  {
+                    id: authData.user.id,
+                    email: authData.user.email ?? email.trim().toLowerCase(),
+                    full_name: name.trim(),
+                    phone: phone.trim(),
+                    updated_at: new Date().toISOString(),
+                  },
+                  { onConflict: "id" }
+                );
+              }
+            } catch (err) {
+              console.warn("Direct profiles insert error:", err);
+            }
+          }
           setSuccessMsg(t.registerSuccess);
           setTimeout(onClose, 1200);
         }

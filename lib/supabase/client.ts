@@ -114,11 +114,19 @@ export async function signUpWithEmail(
 ): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication unavailable." };
   try {
+    const fullName = metadata?.full_name || metadata?.name || "";
+    const phone = metadata?.phone || "";
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
-        data: metadata,
+        data: {
+          full_name: fullName,
+          phone: phone,
+          display_name: fullName,
+          ...metadata,
+        },
         emailRedirectTo:
           typeof window !== "undefined"
             ? `${window.location.origin}/auth/callback`
@@ -128,6 +136,20 @@ export async function signUpWithEmail(
     if (error) return { success: false, error: error.message };
     if (data.user) {
       syncUserProfile(data.user);
+      try {
+        await supabase.from("profiles").upsert(
+          {
+            id: data.user.id,
+            email: data.user.email ?? email.trim().toLowerCase(),
+            full_name: fullName,
+            phone: phone,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
+      } catch (err) {
+        console.warn("[Sanad] profiles upsert error:", err);
+      }
     }
     return { success: true };
   } catch (err: unknown) {
