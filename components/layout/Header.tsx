@@ -14,7 +14,7 @@ import { useCart } from "@/context/CartContext";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { toast } from "@/components/ui/Toast";
-import { supabase, signOutUser } from "@/lib/supabase/client";
+import { supabase, signOutUser, syncUserProfile } from "@/lib/supabase/client";
 import AuthModal from "@/components/modals/AuthModal";
 
 type Panel = "inbox" | "notifications" | null;
@@ -83,6 +83,7 @@ export default function Header() {
     if (!supabase) return;
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
+        syncUserProfile(data.user);
         setAuthUser({
           email: data.user.email ?? "",
           name: data.user.user_metadata?.full_name ?? data.user.email?.split("@")[0] ?? "User",
@@ -91,6 +92,7 @@ export default function Header() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
+        syncUserProfile(session.user);
         setAuthUser({
           email: session.user.email ?? "",
           name: session.user.user_metadata?.full_name ?? session.user.email?.split("@")[0] ?? "User",

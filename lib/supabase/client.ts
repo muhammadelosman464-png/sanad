@@ -2,7 +2,7 @@
  * lib/supabase/client.ts
  */
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -46,6 +46,32 @@ export interface AuthResult {
   error?: string;
 }
 
+export async function syncUserProfile(user: User): Promise<void> {
+  if (!supabase || !user) return;
+  try {
+    const fullName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "User";
+    const phone = user.user_metadata?.phone || user.phone || "";
+    await supabase.from("profiles").upsert(
+      {
+        id: user.id,
+        email: user.email ?? "",
+        full_name: fullName,
+        phone: phone,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[Sanad] syncUserProfile error:", err);
+    }
+  }
+}
+
 export async function signInWithGoogle(): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication not configured." };
   try {
@@ -67,11 +93,14 @@ export async function signInWithGoogle(): Promise<AuthResult> {
 export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication unavailable." };
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
     if (error) return { success: false, error: error.message };
+    if (data.user) {
+      syncUserProfile(data.user);
+    }
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Login failed." };
@@ -85,7 +114,7 @@ export async function signUpWithEmail(
 ): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication unavailable." };
   try {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
@@ -97,6 +126,9 @@ export async function signUpWithEmail(
       },
     });
     if (error) return { success: false, error: error.message };
+    if (data.user) {
+      syncUserProfile(data.user);
+    }
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Registration failed." };
@@ -115,7 +147,7 @@ export async function signOutUser(): Promise<AuthResult> {
 }
 
 export interface OrderPayload {
-  user_id: string;
+  user_id?: string | null;
   user_email: string;
   user_name: string;
   user_phone: string;
@@ -129,14 +161,18 @@ export interface OrderPayload {
 export async function saveOrder(payload: OrderPayload): Promise<void> {
   if (!supabase) return;
   try {
-    await supabase.from("orders").insert([payload]);
+    const cleanPayload = {
+      ...payload,
+      user_id: payload.user_id && payload.user_id.trim().length > 10 ? payload.user_id : null,
+    };
+    await supabase.from("orders").insert([cleanPayload]);
   } catch {
     if (process.env.NODE_ENV === "development") console.warn("[Sanad] saveOrder failed:", payload);
   }
 }
 
 export interface HelpRequestPayload {
-  user_id?: string;
+  user_id?: string | null;
   user_email?: string;
   user_name?: string;
   user_phone?: string;
@@ -147,7 +183,11 @@ export interface HelpRequestPayload {
 export async function saveHelpRequest(payload: HelpRequestPayload): Promise<void> {
   if (!supabase) return;
   try {
-    await supabase.from("help_requests").insert([payload]);
+    const cleanPayload = {
+      ...payload,
+      user_id: payload.user_id && payload.user_id.trim().length > 10 ? payload.user_id : null,
+    };
+    await supabase.from("help_requests").insert([cleanPayload]);
   } catch {
     if (process.env.NODE_ENV === "development") console.warn("[Sanad] saveHelpRequest failed:", payload);
   }
@@ -163,10 +203,13 @@ export interface ProfilePayload {
 export async function saveProfile(payload: ProfilePayload): Promise<void> {
   if (!supabase) return;
   try {
-    await supabase.from("profiles").upsert({
-      ...payload,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "id" });
+    await supabase.from("profiles").upsert(
+      {
+        ...payload,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
   } catch {
     if (process.env.NODE_ENV === "development") console.warn("[Sanad] saveProfile failed:", payload);
   }

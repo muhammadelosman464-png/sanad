@@ -27,7 +27,8 @@ export default function Footer() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const isAdmin = currentUserEmail === "muhammadelosman464@gmail.com";
+  const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com").toLowerCase();
+  const isAdmin = currentUserEmail?.toLowerCase() === ADMIN_EMAIL;
 
   const adminLabel = language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : language === "tr" ? "Y\u00f6netim paneli" : "Admin Panel";
 
