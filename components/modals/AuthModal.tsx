@@ -196,7 +196,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
           dir={isAr ? "rtl" : "ltr"}
         >
           {/* Backdrop click to close */}

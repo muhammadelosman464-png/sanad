@@ -1,16 +1,8 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Supabase OAuth Callback Handler
- *
- * After the user authorises via Google (or any OAuth provider), Supabase
- * redirects back to this URL with a short-lived `code` param.
- * We exchange that code for a session and redirect the user to the home page.
- *
- * Route: /auth/callback
- */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -18,16 +10,35 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = createRouteHandlerClient({ cookies });
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      // Redirect to home with an error param so the UI can show a toast
       return NextResponse.redirect(
         new URL(`/?auth_error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       );
     }
+
+    // Upsert profile into DB after successful OAuth login
+    if (data?.user) {
+      const { user } = data;
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false, autoRefreshToken: false } }
+      );
+      await supabaseAdmin.from("profiles").upsert({
+        id: user.id,
+        email: user.email ?? "",
+        full_name:
+          user.user_metadata?.full_name ??
+          user.user_metadata?.name ??
+          user.email?.split("@")[0] ??
+          "Unknown",
+        phone: user.user_metadata?.phone ?? user.phone ?? "",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+    }
   }
 
-  // Successful login — redirect to intended destination or home
   return NextResponse.redirect(new URL(next, requestUrl.origin));
 }

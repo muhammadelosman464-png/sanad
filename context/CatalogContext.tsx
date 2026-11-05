@@ -8,6 +8,7 @@ export interface NewServiceInput {
   titleAr: string;
   price: number;
   category: ServiceCategory;
+  imageUrl?: string;
 }
 
 interface CatalogContextValue {
@@ -34,7 +35,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       descAr: input.titleAr,
       descTr: input.titleEn,
       price: input.price,
-      imageUrl: sample.imageUrl,
+      imageUrl: input.imageUrl ?? sample.imageUrl,
       accentClass: "bg-brand-500",
       category: input.category,
     };

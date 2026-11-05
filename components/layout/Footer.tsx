@@ -1,21 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Info, LayoutDashboard, Mail, MessageCircle, Instagram } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { toast } from "@/components/ui/Toast";
 import AboutUsModal from "@/components/modals/AboutUsModal";
 import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
+import { supabase } from "@/lib/supabase/client";
 
-const APP_COMING_SOON_MESSAGE = "جاري تجهيز التطبيق، سيتم الإطلاق قريباً!";
+const APP_COMING_SOON_MESSAGE = "\u0642\u0631\u064a\u0628\u0627\u064b! \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0642\u0627\u062f\u0645";
 
 export default function Footer() {
   const { t, language } = useLanguage();
   const [aboutModalOpen, setAboutModalOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const adminLabel = language === "ar" ? "لوحة التحكم" : language === "tr" ? "Yönetim paneli" : "Admin Panel";
+  useEffect(() => {
+    supabase?.auth.getSession().then(({ data }) => {
+      setCurrentUserEmail(data.session?.user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase?.auth.onAuthStateChange((_, session) => {
+      setCurrentUserEmail(session?.user?.email ?? null);
+    }) ?? { data: { subscription: { unsubscribe: () => {} } } };
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const isAdmin = currentUserEmail === "muhammadelosman464@gmail.com";
+
+  const adminLabel = language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : language === "tr" ? "Y\u00f6netim paneli" : "Admin Panel";
 
   return (
     <>
@@ -58,15 +72,17 @@ export default function Footer() {
               <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] transition">App Store</button>
               <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] transition">Google Play</button>
             </div>
-            <p>© {new Date().getFullYear()} Sanad (سَنَد). {t("allRightsReserved")}</p>
-            <button
-              type="button"
-              onClick={() => setAdminOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#ffd700]/40 px-3 py-1.5 font-bold text-[#ffd700] hover:bg-[#ffd700]/10 transition"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>{adminLabel}</span>
-            </button>
+            <p>&copy; {new Date().getFullYear()} Sanad. {t("allRightsReserved")}</p>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setAdminOpen(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#ffd700]/40 px-3 py-1.5 font-bold text-[#ffd700] hover:bg-[#ffd700]/10 transition"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>{adminLabel}</span>
+              </button>
+            )}
           </div>
         </div>
       </footer>

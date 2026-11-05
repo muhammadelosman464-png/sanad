@@ -152,3 +152,45 @@ export async function saveHelpRequest(payload: HelpRequestPayload): Promise<void
     if (process.env.NODE_ENV === "development") console.warn("[Sanad] saveHelpRequest failed:", payload);
   }
 }
+
+export interface ProfilePayload {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+}
+
+export async function saveProfile(payload: ProfilePayload): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.from("profiles").upsert({
+      ...payload,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "id" });
+  } catch {
+    if (process.env.NODE_ENV === "development") console.warn("[Sanad] saveProfile failed:", payload);
+  }
+}
+
+export async function uploadProductImage(
+  file: File,
+  fileName: string
+): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.storage
+      .from("products")
+      .upload(`images/${fileName}`, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type,
+      });
+    if (error || !data) return null;
+    const { data: urlData } = supabase.storage
+      .from("products")
+      .getPublicUrl(`images/${fileName}`);
+    return urlData?.publicUrl ?? null;
+  } catch {
+    return null;
+  }
+}
