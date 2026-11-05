@@ -9,7 +9,9 @@ import {
   ArrowLeft,
   Bell,
   Camera,
+  Check,
   ChevronDown,
+  Clock,
   Inbox,
   LayoutDashboard,
   Loader2,
@@ -17,10 +19,14 @@ import {
   LogOut,
   Menu,
   MessageCircle,
+  Package,
+  Phone,
   Search,
   ShoppingBag,
   Trash2,
+  User,
   X,
+  XCircle,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
@@ -34,14 +40,47 @@ import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
 type Panel = "inbox" | "notifications" | null;
 
 interface HelpNotification {
-  id: string;
+  id: string | number;
+  client_name?: string;
+  client_phone?: string;
+  client_email?: string;
+  requested_service?: string;
+  created_at?: string;
+  status?: string;
+  full_name?: string;
+  phone?: string;
+  request_text?: string;
   user_name?: string;
   user_phone?: string;
   user_email?: string;
-  message: string;
-  amount_usd: number;
-  status: "pending" | "accepted" | "deleted";
-  created_at?: string;
+  message?: string;
+  amount_usd?: number;
+}
+
+function formatRequestTime(dateStr?: string, isArabic = true): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diffSec < 60) return isArabic ? "الآن" : "Just now";
+    if (diffSec < 3600) {
+      const mins = Math.floor(diffSec / 60);
+      return isArabic ? `منذ ${mins} دقيقة` : `${mins}m ago`;
+    }
+    if (diffSec < 86400) {
+      const hours = Math.floor(diffSec / 3600);
+      return isArabic ? `منذ ${hours} ساعة` : `${hours}h ago`;
+    }
+    return d.toLocaleDateString(isArabic ? "ar-EG" : "en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
 }
 
 const VISUAL_SEARCH_DELAY_MS = 1500;
@@ -74,8 +113,9 @@ export default function Header() {
       const { data, error } = await supabase
         .from("help_requests")
         .select("*")
+        .or("status.eq.pending,status.is.null")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (data && !error) {
         setHelpRequests(data);
@@ -178,37 +218,47 @@ export default function Header() {
     }, VISUAL_SEARCH_DELAY_MS);
   };
 
+  // 1. Accept button: updates status to 'accepted' and removes from pending list immediately
   const handleAcceptRequest = async (req: HelpNotification) => {
-    // 1. Immediately remove from notification list
-    setHelpRequests((prev) => prev.filter((r) => r.id !== req.id));
-
-    // 2. Mark accepted in Supabase
+    setHelpRequests((prev) => prev.filter((r) => String(r.id) !== String(req.id)));
     if (supabase) {
       await supabase.from("help_requests").update({ status: "accepted" }).eq("id", req.id);
     }
-
-    // 3. Open WhatsApp chat with requester
-    if (req.user_phone) {
-      const cleanPhone = req.user_phone.replace(/\D/g, "");
-      const msg = encodeURIComponent(
-        `\u0645\u0631\u062d\u0628\u0627\u064b ${req.user_name || ""}\u060c \u062a\u0645 \u0642\u0628\u0648\u0644 \u0637\u0644\u0628 \u0627\u0644\u0645\u0633\u0627\u0639\u062f\u0629 \u0628\u0642\u064a\u0645\u0629 $${req.amount_usd}. \u0633\u0646\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0627\u0644\u0622\u0646 \u0644\u0625\u062a\u0645\u0627\u0645 \u0627\u0644\u062a\u0633\u0644\u064a\u0645.`
-      );
-      window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
-    }
-
-    toast.success(
-      language === "ar"
-        ? "\u062a\u0645 \u0642\u0628\u0648\u0644 \u0627\u0644\u0637\u0644\u0628 \u0648\u0641\u062a\u062d \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628!"
-        : "Request accepted & WhatsApp opened!"
-    );
+    toast.success(language === "ar" ? "\u062a\u0645 \u0642\u0628\u0648\u0644 \u0627\u0644\u0637\u0644\u0628 \u0628\u0646\u062c\u0627\u062d!" : "Request accepted!");
   };
 
-  const handleDeleteRequest = async (id: string) => {
-    setHelpRequests((prev) => prev.filter((r) => r.id !== id));
-    if (supabase) {
-      await supabase.from("help_requests").update({ status: "deleted" }).eq("id", id);
+  // 2. WhatsApp button: opens wa.me chat with prefilled message
+  const handleWhatsAppContact = (req: HelpNotification) => {
+    const rawPhone = req.client_phone || req.phone || req.user_phone || "";
+    const cleanPhone = rawPhone.replace(/\D/g, "");
+    if (!cleanPhone) {
+      toast.error(language === "ar" ? "\u0644\u0627 \u064a\u0648\u062c\u062f \u0631\u0642\u0645 \u0647\u0627\u062a\u0641 \u0635\u0627\u0644\u062d \u0644\u0644\u0648\u0627\u062a\u0633\u0622\u0628" : "No valid phone number for WhatsApp");
+      return;
     }
-    toast.success(language === "ar" ? "\u062a\u0645 \u062d\u0630\u0641 \u0627\u0644\u0625\u0634\u0639\u0627\u0631" : "Notification dismissed");
+    const clientName = req.client_name || req.full_name || req.user_name || (language === "ar" ? "\u0639\u0632\u064a\u0632\u064a \u0627\u0644\u0639\u0645\u064a\u0644" : "Client");
+    const service = req.requested_service || req.request_text || (language === "ar" ? "\u062e\u062f\u0645\u0629 \u0645\u0646\u0635\u0629 \u0633\u0646\u062f" : "Sanad Service");
+    const msg = encodeURIComponent(
+      `\u0645\u0631\u062d\u0628\u0627\u064b ${clientName}\u060c \u0628\u062e\u0635\u0648\u0635 \u0637\u0644\u0628\u0643 \u0644\u062e\u062f\u0645\u0629 "${service}" \u0639\u0628\u0631 \u0645\u0646\u0635\u0629 \u0633\u0646\u062f...`
+    );
+    window.open(`https://wa.me/${cleanPhone}?text=${msg}`, "_blank");
+  };
+
+  // 3. Reject button: updates status to 'rejected' and removes from pending list immediately
+  const handleRejectRequest = async (req: HelpNotification) => {
+    setHelpRequests((prev) => prev.filter((r) => String(r.id) !== String(req.id)));
+    if (supabase) {
+      await supabase.from("help_requests").update({ status: "rejected" }).eq("id", req.id);
+    }
+    toast.success(language === "ar" ? "\u062a\u0645 \u0631\u0641\u0636 \u0627\u0644\u0637\u0644\u0628" : "Request rejected");
+  };
+
+  // 4. Delete button: deletes the row permanently from Supabase and removes immediately
+  const handleDeleteRequest = async (id: string | number) => {
+    setHelpRequests((prev) => prev.filter((r) => String(r.id) !== String(id)));
+    if (supabase) {
+      await supabase.from("help_requests").delete().eq("id", id);
+    }
+    toast.success(language === "ar" ? "\u062a\u0645 \u062d\u0630\u0641 \u0627\u0644\u0637\u0644\u0628 \u0646\u0647\u0627\u0626\u064a\u0627\u064b" : "Request deleted permanently");
   };
 
   const copy =
@@ -218,8 +268,11 @@ export default function Header() {
           inbox: "\u0627\u0644\u0631\u0633\u0627\u0626\u0644",
           alerts: "\u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0645\u0633\u0627\u0639\u062f\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629",
           menu: "\u0627\u0644\u0642\u0627\u0626\u0645\u0629",
-          empty: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0637\u0644\u0628\u0627\u062a \u0645\u0633\u0627\u0639\u062f\u0629 \u0645\u0639\u0644\u0642\u0629",
-          contact: "\u0642\u0628\u0648\u0644 + \u0648\u0627\u062a\u0633\u0622\u0628",
+          empty: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0637\u0644\u0628\u0627\u062a \u062c\u062f\u064a\u062f\u0629",
+          emptyHint: "\u0633\u064a\u062a\u0645 \u0639\u0631\u0636 \u0637\u0644\u0628\u0627\u062a \u0627\u0644\u0645\u0633\u0627\u0639\u062f\u0629 \u0627\u0644\u062c\u062f\u064a\u062f\u0629 \u0647\u0646\u0627 \u0641\u0648\u0631 \u0648\u0635\u0648\u0644\u0647\u0627",
+          accept: "\u0642\u0628\u0648\u0644",
+          whatsapp: "\u062a\u0648\u0627\u0635\u0644 \u0639\u0628\u0631 \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628",
+          reject: "\u0631\u0641\u0636",
           deleteLabel: "\u062d\u0630\u0641",
         }
       : language === "tr"
@@ -228,8 +281,11 @@ export default function Header() {
           inbox: "Mesajlar",
           alerts: "Yeni Yardim Talepleri",
           menu: "Menu",
-          empty: "Bekleyen yardim talebi bulunmuyor",
-          contact: "Kabul + WhatsApp",
+          empty: "Yeni talep bulunmuyor",
+          emptyHint: "Yeni yardim talepleri geldiginde burada gorunecektir",
+          accept: "Kabul Et",
+          whatsapp: "WhatsApp",
+          reject: "Reddet",
           deleteLabel: "Sil",
         }
       : {
@@ -237,8 +293,11 @@ export default function Header() {
           inbox: "Messages",
           alerts: "Incoming Help Requests",
           menu: "Menu",
-          empty: "No pending assistance requests",
-          contact: "Accept + WhatsApp",
+          empty: "No new requests",
+          emptyHint: "New assistance requests will appear here when submitted",
+          accept: "Accept",
+          whatsapp: "WhatsApp",
+          reject: "Reject",
           deleteLabel: "Delete",
         };
 
@@ -249,7 +308,9 @@ export default function Header() {
     { href: "/impact", label: language === "ar" ? "\u0627\u0644\u0623\u062b\u0631" : "Impact" },
   ];
 
-  const pendingRequests = helpRequests.filter((r) => r.status === "pending");
+  const pendingRequests = helpRequests.filter(
+    (r) => r.status === "pending" || !r.status
+  );
   const pendingCount = pendingRequests.length;
 
   const showAdminButton =
@@ -462,7 +523,7 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: 0.16 }}
-                    className="absolute end-0 top-14 w-84 sm:w-96 rounded-2xl border border-[#d4af37]/35 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-4 z-50 max-h-[80vh] overflow-y-auto"
+                    className="absolute end-0 top-14 w-[92vw] sm:w-[440px] max-w-[460px] rounded-3xl border border-[#d4af37]/35 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-4 sm:p-5 z-50 max-h-[85vh] overflow-y-auto"
                   >
                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#d4af37]/20">
                       <div className="flex items-center gap-2">
@@ -475,55 +536,145 @@ export default function Header() {
                     </div>
 
                     {pendingRequests.length === 0 ? (
-                      <p className="text-sm text-white/50 text-center py-8">{copy.empty}</p>
+                      <div className="text-center py-10 px-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center mx-auto mb-3 text-[#d4af37]">
+                          <Bell className="w-6 h-6 opacity-60" />
+                        </div>
+                        <p className="text-sm font-bold text-white">{copy.empty}</p>
+                        <p className="text-xs text-white/40 mt-1">{copy.emptyHint}</p>
+                      </div>
                     ) : (
-                      <ul className="space-y-2.5">
-                        {pendingRequests.map((req) => (
-                          <motion.li
-                            key={req.id}
-                            layout
-                            exit={{ opacity: 0, x: 16 }}
-                            className="rounded-xl bg-white/5 border border-white/10 p-3 hover:border-[#d4af37]/40 transition"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <p className="text-sm font-bold text-white">
-                                  {req.user_name || "Applicant"}{" "}
-                                  <span className="text-xs font-semibold text-[#d4af37]">
-                                    ({req.user_phone || "No phone"})
+                      <ul className="space-y-3">
+                        {pendingRequests.map((req) => {
+                          const clientName =
+                            req.client_name ||
+                            req.full_name ||
+                            req.user_name ||
+                            (language === "ar" ? "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Applicant");
+                          const clientPhone =
+                            req.client_phone || req.phone || req.user_phone || "";
+                          const clientEmail =
+                            req.client_email || req.user_email || "";
+                          const serviceName =
+                            req.requested_service ||
+                            req.request_text ||
+                            (language === "ar" ? "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Help Request");
+                          const timeStr = formatRequestTime(req.created_at, language === "ar");
+
+                          return (
+                            <motion.li
+                              key={req.id}
+                              layout
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 hover:border-[#d4af37]/40 transition space-y-2.5"
+                            >
+                              {/* Top row: Client name and timestamp */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] shrink-0 font-black text-xs">
+                                    <User className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-bold text-white leading-tight">
+                                      {clientName}
+                                    </h4>
+                                    {clientEmail && (
+                                      <p className="text-[11px] text-white/40">{clientEmail}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                {timeStr && (
+                                  <span className="text-[11px] text-white/50 flex items-center gap-1 shrink-0 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                    <Clock className="w-3 h-3 text-[#d4af37]" />
+                                    <span>{timeStr}</span>
                                   </span>
-                                </p>
-                                <p className="text-xs text-white/40 mt-0.5">{req.user_email}</p>
+                                )}
                               </div>
-                              <span className="text-xs font-black text-[#d4af37] shrink-0">
-                                ${req.amount_usd}
-                              </span>
-                            </div>
 
-                            <p className="text-xs text-slate-300 mt-2 bg-black/40 p-2 rounded-lg border border-white/5 line-clamp-3">
-                              {req.message}
-                            </p>
+                              {/* Middle: Phone and Requested Service */}
+                              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                {clientPhone ? (
+                                  <a
+                                    href={`tel:${clientPhone}`}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:border-emerald-400 transition"
+                                  >
+                                    <Phone className="w-3 h-3 text-emerald-400" />
+                                    <span dir="ltr">{clientPhone}</span>
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-white/40 italic">
+                                    {language === "ar" ? "\u0628\u062f\u0648\u0646 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641" : "No phone"}
+                                  </span>
+                                )}
 
-                            <div className="mt-3 flex items-center justify-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteRequest(req.id)}
-                                className="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-bold text-white/60 hover:bg-red-950/40 hover:text-red-400 hover:border-red-500/40 transition flex items-center gap-1"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>{copy.deleteLabel}</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleAcceptRequest(req)}
-                                className="rounded-lg bg-gradient-to-r from-[#d4af37] to-[#b8930a] hover:brightness-105 text-[#1d3023] font-black px-3 py-1 text-xs transition flex items-center gap-1.5 shadow-sm"
-                              >
-                                <MessageCircle className="w-3.5 h-3.5" />
-                                <span>{copy.contact}</span>
-                              </button>
-                            </div>
-                          </motion.li>
-                        ))}
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 text-[#d4af37] text-xs font-bold">
+                                  <Package className="w-3.5 h-3.5 text-[#d4af37]" />
+                                  <span>{serviceName}</span>
+                                </div>
+
+                                {req.amount_usd && req.amount_usd > 0 ? (
+                                  <span className="text-xs font-black text-amber-300 bg-amber-950/40 border border-amber-500/20 px-2 py-0.5 rounded-lg">
+                                    ${req.amount_usd}
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {/* Description / message if distinct from service name */}
+                              {req.message && req.message !== serviceName && (
+                                <p className="text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5 leading-relaxed line-clamp-3">
+                                  {req.message}
+                                </p>
+                              )}
+
+                              {/* 4 Distinct Action Buttons */}
+                              <div className="pt-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                {/* 1. Accept */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleAcceptRequest(req)}
+                                  className="py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
+                                  title={copy.accept}
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>{copy.accept}</span>
+                                </button>
+
+                                {/* 2. WhatsApp */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleWhatsAppContact(req)}
+                                  className="py-1.5 px-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
+                                  title={copy.whatsapp}
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                  <span className="truncate">{language === "ar" ? "\u0648\u0627\u062a\u0633\u0622\u0628" : "WhatsApp"}</span>
+                                </button>
+
+                                {/* 3. Reject */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRejectRequest(req)}
+                                  className="py-1.5 px-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
+                                  title={copy.reject}
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>{copy.reject}</span>
+                                </button>
+
+                                {/* 4. Delete */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRequest(req.id)}
+                                  className="py-1.5 px-2 rounded-xl hover:bg-red-950/60 text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
+                                  title={copy.deleteLabel}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>{copy.deleteLabel}</span>
+                                </button>
+                              </div>
+                            </motion.li>
+                          );
+                        })}
                       </ul>
                     )}
                   </motion.div>
