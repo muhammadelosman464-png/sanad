@@ -17,6 +17,7 @@ interface CatalogContextValue {
   loading: boolean;
   addService: (input: NewServiceInput) => Promise<ServiceItem | null>;
   updatePrice: (id: string, price: number) => Promise<void>;
+  updateServiceImage: (id: string, imageUrl: string) => Promise<void>;
   removeService: (id: string) => Promise<void>;
   refreshCatalog: () => Promise<void>;
 }
@@ -49,7 +50,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         const mapped: ServiceItem[] = data.map((d: any) => ({
           id: String(d.id),
           titleEn: d.title_en || d.titleEn || "Service",
-          titleAr: d.title_ar || d.titleAr || d.title_en || "خدمة",
+          titleAr: d.title_ar || d.titleAr || d.title_en || "\u062e\u062f\u0645\u0629",
           titleTr: d.title_tr || d.titleTr || d.title_en || "Hizmet",
           descEn: d.desc_en || d.descEn || d.title_en || "",
           descAr: d.desc_ar || d.descAr || d.title_ar || "",
@@ -79,9 +80,8 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     async (input: NewServiceInput): Promise<ServiceItem | null> => {
       const defaultImageUrl =
         "https://images.pexels.com/photos/6994944/pexels-photo-6994944.jpeg?auto=compress&cs=tinysrgb&w=900";
-      const finalImageUrl = input.imageUrl && input.imageUrl.trim().length > 0
-        ? input.imageUrl
-        : defaultImageUrl;
+      const finalImageUrl =
+        input.imageUrl && input.imageUrl.trim().length > 0 ? input.imageUrl : defaultImageUrl;
 
       let createdId = `service-${Date.now()}`;
 
@@ -143,6 +143,19 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateServiceImage = useCallback(async (id: string, imageUrl: string) => {
+    setServices((current) =>
+      current.map((service) => (service.id === id ? { ...service, imageUrl } : service))
+    );
+    if (supabase) {
+      try {
+        await supabase.from("services").update({ image_url: imageUrl }).eq("id", id);
+      } catch (err) {
+        console.warn("[Sanad] updateServiceImage DB update failed:", err);
+      }
+    }
+  }, []);
+
   const removeService = useCallback(async (id: string) => {
     setServices((current) => current.filter((service) => service.id !== id));
     if (supabase) {
@@ -160,10 +173,11 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       loading,
       addService,
       updatePrice,
+      updateServiceImage,
       removeService,
       refreshCatalog: fetchServices,
     }),
-    [services, loading, addService, updatePrice, removeService, fetchServices]
+    [services, loading, addService, updatePrice, updateServiceImage, removeService, fetchServices]
   );
 
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>;

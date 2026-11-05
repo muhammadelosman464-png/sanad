@@ -5,7 +5,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, HandHeart, X, Loader2 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import NumberInput from "@/components/ui/NumberInput";
-import { supabase, saveHelpRequest, saveOrder, syncUserProfile } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/Toast";
+import { supabase, syncUserProfile } from "@/lib/supabase/client";
 
 export interface AssistanceRequest {
   id: string;
@@ -52,13 +53,13 @@ export default function RequestAssistanceModal({
       ? {
           title: "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
           nameLabel: "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644",
-          phoneLabel: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641 / \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628 (\u0644\u0644\u062a\u0648\u0627\u0635\u0644)",
+          phoneLabel: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641 / \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628",
           message: "\u0627\u0634\u0631\u062d \u0627\u062d\u062a\u064a\u0627\u062c\u0643 \u0628\u0627\u062e\u062a\u0635\u0627\u0631",
           amount: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u062a\u0642\u062f\u064a\u0631\u064a (USD)",
-          placeholder: "\u0645\u062b\u0644\u0627\u064b: \u0646\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u062f\u0639\u0645 \u0637\u0628\u064a \u0639\u0627\u062c\u0644 \u0644\u0644\u0639\u0627\u0626\u0644\u0629...",
+          placeholder: "\u0645\u062b\u0644\u0627\u064b: \u0646\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u0633\u0644\u0629 \u063a\u0630\u0627\u0626\u064a\u0629 \u0639\u0627\u062c\u0644\u0629...",
           submit: "\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u0637\u0644\u0628",
-          success: "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0637\u0644\u0628\u0643 \u0628\u0646\u062c\u0627\u062d",
-          successHint: "\u0633\u064a\u0642\u0648\u0645 \u0641\u0631\u064a\u0642 \u0633\u0646\u062f \u0628\u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0637\u0644\u0628 \u0648\u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0639\u0628\u0631 \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628 \u0642\u0631\u064a\u0628\u0627\u064b.",
+          success: "\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0637\u0644\u0628\u0643 \u0628\u0646\u062c\u0627\u062d!",
+          successHint: "\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0637\u0644\u0628 \u0641\u064a \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0648\u0633\u064a\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0641\u0631\u064a\u0642 \u0633\u0646\u062f \u0639\u0628\u0631 \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628.",
           another: "\u0625\u0631\u0633\u0627\u0644 \u0637\u0644\u0628 \u0622\u062e\u0631",
           close: "\u0625\u063a\u0644\u0627\u0642",
         }
@@ -71,8 +72,8 @@ export default function RequestAssistanceModal({
           amount: "Istenen tutar (USD)",
           placeholder: "Orn: Acil tibbi destege ihtiyacimiz var...",
           submit: "Talebi gonder",
-          success: "Talebiniz gonderildi",
-          successHint: "Sanad ekibi talebinizi inceleyip yakinda iletisime gececektir.",
+          success: "Talebiniz gonderildi!",
+          successHint: "Talebiniz kaydedildi, Sanad ekibi yakinda iletisime gececektir.",
           another: "Yeni talep gonder",
           close: "Kapat",
         }
@@ -82,10 +83,10 @@ export default function RequestAssistanceModal({
           phoneLabel: "Phone Number / WhatsApp",
           message: "Tell us what you need",
           amount: "Requested amount in USD",
-          placeholder: "Example: We need urgent medical assistance for our family...",
+          placeholder: "Example: We need urgent food assistance...",
           submit: "Send Request",
-          success: "Your request was submitted",
-          successHint: "The Sanad team will review your request and contact you via WhatsApp soon.",
+          success: "Your request was submitted!",
+          successHint: "Your request has been saved and the Sanad team will contact you via WhatsApp soon.",
           another: "Submit Another Request",
           close: "Close",
         };
@@ -104,50 +105,65 @@ export default function RequestAssistanceModal({
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
-    setIsSubmitting(true);
 
-    const requestId = `request-${Date.now()}`;
-    onSubmit({ id: requestId, message: message.trim(), amount });
+    if (!phone.trim()) {
+      toast.error(language === "ar" ? "\u064a\u0631\u062c\u0649 \u0643\u062a\u0627\u0628\u0629 \u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641 \u0644\u0644\u062a\u0648\u0627\u0635\u0644" : "Please enter your phone number");
+      return;
+    }
+
+    if (!supabase) {
+      toast.error(language === "ar" ? "\u0644\u0645 \u064a\u062a\u0645 \u062a\u0647\u064a\u0626\u0629 \u0642\u0627\u0639\u062f\u0629 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a" : "Database not connected");
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       let currentUserId: string | null = null;
-      let userEmail = "";
+      let userEmail: string | null = null;
 
-      if (supabase) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          currentUserId = user.id;
-          userEmail = user.email || "";
-          await syncUserProfile(user);
-        }
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData?.user) {
+        currentUserId = userData.user.id;
+        userEmail = userData.user.email || null;
+        await syncUserProfile(userData.user);
       }
 
-      // 1. Save to `help_requests` table
-      await saveHelpRequest({
-        user_id: currentUserId,
-        user_email: userEmail,
-        user_name: name.trim() || undefined,
-        user_phone: phone.trim() || undefined,
-        message: message.trim(),
-        amount_usd: amount,
-      });
+      // Real Supabase insert into `help_requests`
+      const { error: insertError } = await supabase.from("help_requests").insert([
+        {
+          user_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
+          user_phone: phone.trim(),
+          message: message.trim(),
+          amount_usd: amount || 0,
+          user_email: userEmail,
+          user_id: currentUserId,
+          status: "pending",
+        },
+      ]);
 
-      // 2. Also register in `orders` table so the admin sees it in all transaction feeds
-      await saveOrder({
-        user_id: currentUserId,
-        user_email: userEmail || "assistance@sanad.org",
-        user_name: name.trim() || "Assistance Applicant",
-        user_phone: phone.trim(),
-        service_title: `Assistance: ${message.slice(0, 30)}...`,
-        service_category: "support",
-        amount_usd: amount,
-        quantity: 1,
-        notes: `Help Request: ${message.trim()}`,
-      });
+      if (insertError) {
+        console.error("Failed to insert help request into Supabase:", insertError);
+        toast.error(
+          language === "ar"
+            ? "\u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u0625\u0631\u0633\u0627\u0644: " + insertError.message
+            : "Submission error: " + insertError.message
+        );
+        setIsSubmitting(false);
+        return;
+      }
 
+      // Notify Notification Bell in Header dynamically
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("sanad-new-help-request"));
+      }
+
+      onSubmit({ id: `request-${Date.now()}`, message: message.trim(), amount });
+      toast.success(copy.success);
       setSent(true);
-    } catch (err) {
-      console.warn("Assistance submission error:", err);
+    } catch (err: any) {
+      console.error("Assistance submission exception:", err);
+      toast.error(err?.message || "Error submitting request");
     } finally {
       setIsSubmitting(false);
     }
@@ -258,7 +274,7 @@ export default function RequestAssistanceModal({
                     {copy.message}
                     <textarea
                       required
-                      minLength={10}
+                      minLength={5}
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
                       placeholder={copy.placeholder}
@@ -285,7 +301,7 @@ export default function RequestAssistanceModal({
                     {isSubmitting ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Sending...</span>
+                        <span>\u062c\u0627\u0631\u064d \u0627\u0644\u0625\u0631\u0633\u0627\u0644...</span>
                       </>
                     ) : (
                       copy.submit

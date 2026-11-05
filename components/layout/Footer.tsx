@@ -9,7 +9,7 @@ import AboutUsModal from "@/components/modals/AboutUsModal";
 import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
 import { supabase } from "@/lib/supabase/client";
 
-const APP_COMING_SOON_MESSAGE = "\u0642\u0631\u064a\u0628\u0627\u064b! \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0642\u0627\u062f\u0645";
+const APP_COMING_SOON_MESSAGE = "\u0642\u0631\u064a\u0628\u0627\u064b! \u0627\u0644\u062a\u0637\u0628\u064a\u0642 \u0642\u0627\u062f\u0645 \u0639\u0644\u0649 App Store \u0648 Google Play";
 
 export default function Footer() {
   const { t, language } = useLanguage();
@@ -18,10 +18,11 @@ export default function Footer() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase?.auth.getSession().then(({ data }) => {
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
       setCurrentUserEmail(data.session?.user?.email ?? null);
     });
-    const { data: { subscription } } = supabase?.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setCurrentUserEmail(session?.user?.email ?? null);
     }) ?? { data: { subscription: { unsubscribe: () => {} } } };
     return () => subscription.unsubscribe();
@@ -30,55 +31,146 @@ export default function Footer() {
   const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com").toLowerCase();
   const isAdmin = currentUserEmail?.toLowerCase() === ADMIN_EMAIL;
 
-  const adminLabel = language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : language === "tr" ? "Y\u00f6netim paneli" : "Admin Panel";
+  const adminLabel =
+    language === "ar"
+      ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645"
+      : language === "tr"
+      ? "Y\u00f6netim paneli"
+      : "Admin Panel";
+
+  const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    if (typeof window !== "undefined") {
+      if (window.location.pathname === "/") {
+        e.preventDefault();
+        const element = document.getElementById(targetId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+          window.history.pushState(null, "", `#${targetId}`);
+        }
+      }
+    }
+  };
 
   return (
     <>
       <footer className="relative z-20 w-full border-t border-[#ffd700]/25 bg-[#132a1c] text-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-5">
+            {/* Logo & Tagline */}
             <div className="flex items-center gap-3">
-              <img src="/logo.jpeg" alt="Sanad" className="h-10 w-auto rounded-xl bg-white p-1 object-contain" />
-              <p className="hidden xl:block text-xs text-slate-400 max-w-xs">{t("footerTagline")}</p>
+              <Link href="/" className="shrink-0">
+                <img
+                  src="/logo.jpeg"
+                  alt="Sanad"
+                  className="h-10 w-auto rounded-xl bg-white p-1 object-contain"
+                />
+              </Link>
+              <p className="hidden xl:block text-xs text-slate-400 max-w-xs leading-relaxed">
+                {t("footerTagline")}
+              </p>
             </div>
 
-            <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm font-medium">
-              <Link href="#services" className="hover:text-[#ffd700] transition">{t("navServices")}</Link>
-              <Link href="#how-it-works" className="hover:text-[#ffd700] transition">{t("navProviders")}</Link>
-              <Link href="#pricing" className="hover:text-[#ffd700] transition">{t("navPricing")}</Link>
-              <button type="button" onClick={() => setAboutModalOpen(true)} className="inline-flex items-center gap-1.5 text-[#ffd700] hover:text-white transition">
-                <Info className="w-4 h-4" />
+            {/* Interactive Smooth Scroll Links */}
+            <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm font-semibold">
+              <Link
+                href="/#services"
+                onClick={(e) => handleSmoothScroll(e, "services")}
+                className="text-slate-300 hover:text-[#ffd700] transition cursor-pointer"
+              >
+                {t("navServices")}
+              </Link>
+              <Link
+                href="/#how-it-works"
+                onClick={(e) => handleSmoothScroll(e, "how-it-works")}
+                className="text-slate-300 hover:text-[#ffd700] transition cursor-pointer"
+              >
+                {t("navProviders")}
+              </Link>
+              <Link
+                href="/#pricing"
+                onClick={(e) => handleSmoothScroll(e, "pricing")}
+                className="text-slate-300 hover:text-[#ffd700] transition cursor-pointer"
+              >
+                {t("navPricing")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setAboutModalOpen(true)}
+                className="inline-flex items-center gap-1.5 text-slate-300 hover:text-[#ffd700] transition cursor-pointer font-semibold"
+              >
+                <Info className="w-4 h-4 text-[#ffd700]" />
                 <span>{t("navAboutUs")}</span>
               </button>
-              <Link href="/privacy" className="hover:text-[#ffd700] transition">{t("privacyPolicy")}</Link>
-              <Link href="/terms" className="hover:text-[#ffd700] transition">{t("termsOfService")}</Link>
+              <Link
+                href="/privacy"
+                className="text-slate-300 hover:text-[#ffd700] transition cursor-pointer"
+              >
+                {t("privacyPolicy")}
+              </Link>
+              <Link
+                href="/terms"
+                className="text-slate-300 hover:text-[#ffd700] transition cursor-pointer"
+              >
+                {t("termsOfService")}
+              </Link>
             </nav>
 
+            {/* Contact Icons */}
             <div className="flex items-center gap-4 text-sm">
-              <a href="https://wa.me/905347757737" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition">
+              <a
+                href="https://wa.me/905347757737"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 transition"
+              >
                 <MessageCircle className="w-4 h-4" />
                 <span dir="ltr">+90 534 775 77 37</span>
               </a>
-              <a href="mailto:muhammadelosman464@gmail.com" aria-label="Email" className="text-slate-300 hover:text-[#ffd700] transition">
+              <a
+                href="mailto:muhammadelosman464@gmail.com"
+                aria-label="Email"
+                className="text-slate-300 hover:text-[#ffd700] transition"
+              >
                 <Mail className="w-4 h-4" />
               </a>
-              <a href="https://instagram.com/abo_iilyas7" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="text-slate-300 hover:text-[#ffd700] transition">
+              <a
+                href="https://instagram.com/abo_iilyas7"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-slate-300 hover:text-[#ffd700] transition"
+              >
                 <Instagram className="w-4 h-4" />
               </a>
             </div>
           </div>
 
+          {/* Bottom row: Stores, Copyright, and Admin Panel Button */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-slate-400">
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] transition">App Store</button>
-              <button type="button" onClick={() => toast.success(APP_COMING_SOON_MESSAGE)} className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] transition">Google Play</button>
+              <button
+                type="button"
+                onClick={() => toast.success(APP_COMING_SOON_MESSAGE)}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] hover:text-[#ffd700] transition"
+              >
+                App Store
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.success(APP_COMING_SOON_MESSAGE)}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-white hover:border-[#ffd700] hover:text-[#ffd700] transition"
+              >
+                Google Play
+              </button>
             </div>
-            <p>&copy; {new Date().getFullYear()} Sanad. {t("allRightsReserved")}</p>
+
+            <p>&copy; {new Date().getFullYear()} Sanad (سَنَد). {t("allRightsReserved")}</p>
+
             {isAdmin && (
               <button
                 type="button"
                 onClick={() => setAdminOpen(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-[#ffd700]/40 px-3 py-1.5 font-bold text-[#ffd700] hover:bg-[#ffd700]/10 transition"
+                className="inline-flex items-center gap-2 rounded-lg border border-[#ffd700]/50 bg-[#ffd700]/10 px-3 py-1.5 font-bold text-[#ffd700] hover:bg-[#ffd700]/20 transition shadow-sm"
               >
                 <LayoutDashboard className="w-3.5 h-3.5" />
                 <span>{adminLabel}</span>
