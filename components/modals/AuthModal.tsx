@@ -197,39 +197,57 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
           setTimeout(onClose, 900);
         }
       } else {
-        const result = await signUpWithEmail(email, password, {
-          full_name: name.trim(),
-          phone: phone.trim(),
-          display_name: name.trim(),
+        if (!supabase) {
+          setErrorMsg(t.notConfigured);
+          return;
+        }
+
+        const fullName = name.trim();
+        const userPhone = phone.trim();
+        const cleanEmail = email.trim().toLowerCase();
+
+        // Direct Supabase signUp strictly passing full_name and phone in options.data
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName,
+              phone: userPhone,
+            },
+            emailRedirectTo:
+              typeof window !== "undefined"
+                ? `${window.location.origin}/auth/callback`
+                : undefined,
+          },
         });
-        if (!result.success) {
-          console.error("[Supabase Auth Registration Error]:", result.error);
-          if (result.error?.toLowerCase().includes("rate limit")) {
+
+        if (signUpError) {
+          console.error("[Supabase Auth Registration Error]:", signUpError);
+          if (signUpError.message?.toLowerCase().includes("rate limit")) {
             setErrorMsg(
               isAr
                 ? "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u0625\u0631\u0633\u0627\u0644 \u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u062a\u0623\u0643\u064a\u062f (Email Rate Limit). \u064a\u0631\u062c\u0649 \u0625\u064a\u0642\u0627\u0641 'Confirm email' \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a Supabase Auth."
                 : "Email rate limit exceeded. Please disable 'Confirm email' in Supabase Auth -> Providers -> Email settings to test without rate limits."
             );
           } else {
-            setErrorMsg(result.error ?? "Registration failed");
+            setErrorMsg(signUpError.message || "Registration failed");
           }
         } else {
           // Explicitly save into profiles table immediately
-          if (supabase) {
+          const newUser = signUpData.user;
+          if (newUser) {
             try {
-              const { data: authData } = await supabase.auth.getUser();
-              if (authData?.user) {
-                await supabase.from("profiles").upsert(
-                  {
-                    id: authData.user.id,
-                    email: authData.user.email ?? email.trim().toLowerCase(),
-                    full_name: name.trim(),
-                    phone: phone.trim(),
-                    updated_at: new Date().toISOString(),
-                  },
-                  { onConflict: "id" }
-                );
-              }
+              await supabase.from("profiles").upsert(
+                {
+                  id: newUser.id,
+                  email: newUser.email ?? cleanEmail,
+                  full_name: fullName,
+                  phone: userPhone,
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: "id" }
+              );
             } catch (err) {
               console.warn("Direct profiles insert error:", err);
             }

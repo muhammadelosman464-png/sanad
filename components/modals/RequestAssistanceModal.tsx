@@ -18,6 +18,7 @@ interface RequestAssistanceModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (request: AssistanceRequest) => void;
+  serviceName?: string;
 }
 
 const DEFAULT_AMOUNT = 100;
@@ -26,14 +27,23 @@ export default function RequestAssistanceModal({
   isOpen,
   onClose,
   onSubmit,
+  serviceName = "",
 }: RequestAssistanceModalProps) {
   const { language } = useLanguage();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [requestedService, setRequestedService] = useState(serviceName || "");
   const [message, setMessage] = useState("");
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [sent, setSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (serviceName) {
+      setRequestedService(serviceName);
+    }
+  }, [serviceName]);
 
   // Pre-fill user data if authenticated
   useEffect(() => {
@@ -43,6 +53,9 @@ export default function RequestAssistanceModal({
         if (!name && data.user.user_metadata?.full_name) setName(data.user.user_metadata.full_name);
         if (!phone && (data.user.user_metadata?.phone || data.user.phone)) {
           setPhone(data.user.user_metadata?.phone || data.user.phone || "");
+        }
+        if (!email && data.user.email) {
+          setEmail(data.user.email);
         }
       }
     });
@@ -54,6 +67,8 @@ export default function RequestAssistanceModal({
           title: "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
           nameLabel: "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644",
           phoneLabel: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641 / \u0627\u0644\u0648\u0627\u062a\u0633\u0622\u0628",
+          emailLabel: "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+          serviceLabel: "\u0627\u0644\u062e\u062f\u0645\u0629 \u0627\u0644\u0645\u0637\u0644\u0648\u0628\u0629",
           message: "\u0627\u0634\u0631\u062d \u0627\u062d\u062a\u064a\u0627\u062c\u0643 \u0628\u0627\u062e\u062a\u0635\u0627\u0631",
           amount: "\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u062a\u0642\u062f\u064a\u0631\u064a (USD)",
           placeholder: "\u0645\u062b\u0644\u0627\u064b: \u0646\u062d\u062a\u0627\u062c \u0625\u0644\u0649 \u0633\u0644\u0629 \u063a\u0630\u0627\u0626\u064a\u0629 \u0639\u0627\u062c\u0644\u0629...",
@@ -68,6 +83,8 @@ export default function RequestAssistanceModal({
           title: "Yardim talep et",
           nameLabel: "Ad Soyad",
           phoneLabel: "Telefon Numarasi (WhatsApp)",
+          emailLabel: "E-posta Adresi",
+          serviceLabel: "Talep Edilen Hizmet",
           message: "Ihtiyacinizi kisaca anlatin",
           amount: "Istenen tutar (USD)",
           placeholder: "Orn: Acil tibbi destege ihtiyacimiz var...",
@@ -81,6 +98,8 @@ export default function RequestAssistanceModal({
           title: "Request Assistance",
           nameLabel: "Full Name",
           phoneLabel: "Phone Number / WhatsApp",
+          emailLabel: "Email Address",
+          serviceLabel: "Requested Service",
           message: "Tell us what you need",
           amount: "Requested amount in USD",
           placeholder: "Example: We need urgent food assistance...",
@@ -129,32 +148,45 @@ export default function RequestAssistanceModal({
         await syncUserProfile(userData.user);
       }
 
-      // Real Supabase insert into `help_requests`
+      const finalName = name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629";
+      const finalPhone = phone.trim();
+      const finalEmail = email.trim() || userEmail || "";
+      const finalService = requestedService.trim() || "\u0633\u0644\u0629 \u063a\u0630\u0627\u0626\u064a\u0629 \u0639\u0627\u062c\u0644\u0629";
+
+      // Real Supabase insert into `help_requests` with exact requested columns:
+      // client_name, client_phone, client_email, requested_service
+      const insertPayload = {
+        client_name: finalName,
+        client_phone: finalPhone,
+        client_email: finalEmail,
+        requested_service: finalService,
+        full_name: finalName,
+        phone: finalPhone,
+        request_text: `${finalService} - ${message.trim() || "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629 \u0639\u0628\u0631 \u0633\u0646\u062f"}`,
+        amount_usd: amount || 0,
+        user_id: currentUserId,
+        status: "pending",
+      };
+
       let insertError: any = null;
 
-      // Primary insert with exact requested columns: { full_name, phone, request_text }
-      const primaryRes = await supabase.from("help_requests").insert([
-        {
-          full_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
-          phone: phone.trim(),
-          request_text: message.trim(),
-          amount_usd: amount || 0,
-          user_id: currentUserId,
-          status: "pending",
-        },
-      ]);
-
+      // Primary insert with exact requested columns
+      const primaryRes = await supabase.from("help_requests").insert([insertPayload]);
       insertError = primaryRes.error;
 
       // Fallback: If table uses user_name, user_phone, message schema
       if (insertError && (insertError.message?.includes("column") || insertError.code === "PGRST204")) {
         const fallbackRes = await supabase.from("help_requests").insert([
           {
-            user_name: name.trim() || "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629",
-            user_phone: phone.trim(),
-            message: message.trim(),
+            client_name: finalName,
+            client_phone: finalPhone,
+            client_email: finalEmail,
+            requested_service: finalService,
+            user_name: finalName,
+            user_phone: finalPhone,
+            user_email: finalEmail,
+            message: `${finalService} - ${message.trim() || "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629 \u0639\u0628\u0631 \u0633\u0646\u062f"}`,
             amount_usd: amount || 0,
-            user_email: userEmail,
             user_id: currentUserId,
             status: "pending",
           },
@@ -300,6 +332,31 @@ export default function RequestAssistanceModal({
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+90 5xx xxx xxxx"
+                        className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#ffd700]"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {copy.emailLabel}
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#ffd700]"
+                      />
+                    </label>
+
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+                      {copy.serviceLabel}
+                      <input
+                        required
+                        type="text"
+                        value={requestedService}
+                        onChange={(e) => setRequestedService(e.target.value)}
+                        placeholder="e.g. \u0633\u0644\u0629 \u063a\u0630\u0627\u0626\u064a\u0629 / Food Basket"
                         className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2 text-xs sm:text-sm font-normal text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#ffd700]"
                       />
                     </label>

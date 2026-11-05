@@ -147,6 +147,28 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           notes: `${location.trim()} | Ref: ${receiptNumber}`,
         });
+
+        // Also record into help_requests table so it appears in the client's Table Editor
+        if (supabase) {
+          try {
+            await supabase.from("help_requests").insert([
+              {
+                client_name: name.trim(),
+                client_phone: phone.trim(),
+                client_email: email.trim(),
+                requested_service: serviceTitle,
+                full_name: name.trim(),
+                phone: phone.trim(),
+                request_text: `Order: ${serviceTitle} (${item.quantity}x) - $${item.amount * item.quantity}`,
+                amount_usd: item.amount * item.quantity,
+                user_id: currentUserId,
+                status: "pending",
+              },
+            ]);
+          } catch (e) {
+            console.warn("help_requests checkout sync error:", e);
+          }
+        }
       }
 
       setReceiptItems(items);
