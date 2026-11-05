@@ -15,6 +15,7 @@ import {
   Inbox,
   LayoutDashboard,
   Loader2,
+  Lock,
   LogIn,
   LogOut,
   Menu,
@@ -103,6 +104,22 @@ export default function Header() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  const [passcodeModalOpen, setPasscodeModalOpen] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const [passcodeError, setPasscodeError] = useState("");
+
+  const handleVerifyPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passcodeInput === "Aboilyas7") {
+      setPasscodeModalOpen(false);
+      setPasscodeInput("");
+      setPasscodeError("");
+      setAdminOpen(true);
+      toast.success(language === "ar" ? "\u062a\u0645 \u0627\u0644\u062a\u062d\u0642\u0642 \u0628\u0646\u062c\u0627\u062d!" : "Verified successfully!");
+    } else {
+      setPasscodeError(language === "ar" ? "\u0631\u0645\u0632 \u0627\u0644\u0645\u0631\u0648\u0631 \u063a\u064a\u0631 \u0635\u062d\u064a\u062d" : "Incorrect passcode");
+    }
+  };
 
   // Dynamic Help Requests from Supabase
   const [helpRequests, setHelpRequests] = useState<HelpNotification[]>([]);
@@ -313,12 +330,6 @@ export default function Header() {
   );
   const pendingCount = pendingRequests.length;
 
-  const showAdminButton =
-    authUser?.email?.toLowerCase() === "muhammadelosman464@gmail.com" ||
-    authUser?.email?.toLowerCase() === "digty4@gmail.com" ||
-    (typeof window !== "undefined" &&
-      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"));
-
   const iconButtonClass =
     "relative hidden sm:flex w-10 h-10 rounded-xl items-center justify-center text-slate-200 hover:bg-white/10 transition";
 
@@ -418,19 +429,21 @@ export default function Header() {
                 )}
               </button>
 
-              {/* Admin Dashboard Button */}
-              {showAdminButton && (
-                <button
-                  onClick={() => setAdminOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#e5c158] to-[#b8930a] text-[#1d3023] font-black text-xs shadow-lg shadow-[#d4af37]/25 hover:brightness-110 active:scale-95 transition"
-                  title={language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}
-                  </span>
-                </button>
-              )}
+              {/* Admin Dashboard Button (Protected by Passcode) */}
+              <button
+                onClick={() => {
+                  setPasscodeInput("");
+                  setPasscodeError("");
+                  setPasscodeModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#e5c158] to-[#b8930a] text-[#1d3023] font-black text-xs shadow-lg shadow-[#d4af37]/25 hover:brightness-110 active:scale-95 transition"
+                title={language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}
+                </span>
+              </button>
 
               {/* Cart Button */}
               <button
@@ -468,21 +481,19 @@ export default function Header() {
                         {authUser.email}
                       </p>
                       <hr className="border-[#d4af37]/15 my-1" />
-                      {showAdminButton && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setUserMenuOpen(false);
-                              setAdminOpen(true);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#d4af37] hover:bg-[#d4af37]/15 transition font-semibold"
-                          >
-                            <LayoutDashboard className="w-4 h-4" />
-                            <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}</span>
-                          </button>
-                          <hr className="border-[#d4af37]/15 my-1" />
-                        </>
-                      )}
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setPasscodeInput("");
+                          setPasscodeError("");
+                          setPasscodeModalOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#d4af37] hover:bg-[#d4af37]/15 transition font-semibold"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}</span>
+                      </button>
+                      <hr className="border-[#d4af37]/15 my-1" />
                       <button
                         onClick={async () => {
                           await signOutUser();
@@ -686,18 +697,18 @@ export default function Header() {
           {/* Mobile nav */}
           {menuOpen && (
             <nav className="pb-4 flex flex-wrap gap-2 border-t border-white/10 pt-3">
-              {showAdminButton && (
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setAdminOpen(true);
-                  }}
-                  className="px-4 py-2 rounded-full bg-[#d4af37] text-[#1d3023] text-sm font-black flex items-center gap-2"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}</span>
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setPasscodeInput("");
+                  setPasscodeError("");
+                  setPasscodeModalOpen(true);
+                }}
+                className="px-4 py-2 rounded-full bg-[#d4af37] text-[#1d3023] text-sm font-black flex items-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}</span>
+              </button>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -715,6 +726,99 @@ export default function Header() {
 
       {/* Auth Modal renders cleanly into document.body via createPortal */}
       <AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} initialMode={authMode} />
+
+      {/* Passcode Interceptor Modal for Admin Access */}
+      <AnimatePresence>
+        {passcodeModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div
+              className="fixed inset-0 bg-transparent cursor-pointer"
+              onClick={() => {
+                setPasscodeModalOpen(false);
+                setPasscodeInput("");
+                setPasscodeError("");
+              }}
+              aria-hidden="true"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              transition={{ duration: 0.18 }}
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-[#0f1d14] border border-[#d4af37]/40 shadow-2xl p-6 text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setPasscodeModalOpen(false);
+                  setPasscodeInput("");
+                  setPasscodeError("");
+                }}
+                className="absolute top-4 end-4 p-2 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-2xl bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] shrink-0">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">
+                    {language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}
+                  </h3>
+                  <p className="text-xs text-white/50">
+                    {language === "ar" ? "\u0623\u062f\u062e\u0644 \u0631\u0645\u0632 \u0627\u0644\u0645\u0631\u0648\u0631 \u0644\u0644\u0645\u062a\u0627\u0628\u0639\u0629" : "Enter passcode to continue"}
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleVerifyPasscode} className="space-y-4">
+                <div>
+                  <input
+                    type="password"
+                    autoFocus
+                    value={passcodeInput}
+                    onChange={(e) => {
+                      setPasscodeInput(e.target.value);
+                      if (passcodeError) setPasscodeError("");
+                    }}
+                    placeholder={language === "ar" ? "\u0631\u0645\u0632 \u0627\u0644\u0645\u0631\u0648\u0631..." : "Enter passcode..."}
+                    className="w-full px-4 py-3 rounded-xl bg-black/50 border border-[#d4af37]/30 text-white placeholder-white/30 text-base focus:outline-none focus:ring-2 focus:ring-[#d4af37] text-center tracking-widest font-mono"
+                  />
+                  {passcodeError && (
+                    <p className="text-xs text-rose-400 font-bold mt-2 text-center">
+                      {passcodeError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPasscodeModalOpen(false);
+                      setPasscodeInput("");
+                      setPasscodeError("");
+                    }}
+                    className="flex-1 py-2.5 rounded-xl border border-white/15 hover:bg-white/10 text-sm font-semibold text-white/70 transition"
+                  >
+                    {language === "ar" ? "\u0625\u0644\u063a\u0627\u0621" : "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#d4af37] via-[#e5c158] to-[#b8930a] text-[#1d3023] text-sm font-black shadow-md hover:brightness-110 active:scale-95 transition"
+                  >
+                    {language === "ar" ? "\u062a\u062d\u0642\u0642" : "Verify"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Admin Dashboard Modal */}
       <AdminDashboardModal isOpen={adminOpen} onClose={() => setAdminOpen(false)} />
