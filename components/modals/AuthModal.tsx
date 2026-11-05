@@ -203,7 +203,16 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
           display_name: name.trim(),
         });
         if (!result.success) {
-          setErrorMsg(result.error ?? "Registration failed");
+          console.error("[Supabase Auth Registration Error]:", result.error);
+          if (result.error?.toLowerCase().includes("rate limit")) {
+            setErrorMsg(
+              isAr
+                ? "\u062a\u0645 \u062a\u062c\u0627\u0648\u0632 \u062d\u062f \u0625\u0631\u0633\u0627\u0644 \u0631\u0633\u0627\u0626\u0644 \u0627\u0644\u062a\u0623\u0643\u064a\u062f (Email Rate Limit). \u064a\u0631\u062c\u0649 \u0625\u064a\u0642\u0627\u0641 'Confirm email' \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a Supabase Auth."
+                : "Email rate limit exceeded. Please disable 'Confirm email' in Supabase Auth -> Providers -> Email settings to test without rate limits."
+            );
+          } else {
+            setErrorMsg(result.error ?? "Registration failed");
+          }
         } else {
           // Explicitly save into profiles table immediately
           if (supabase) {

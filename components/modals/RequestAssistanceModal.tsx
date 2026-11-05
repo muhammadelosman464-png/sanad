@@ -163,12 +163,27 @@ export default function RequestAssistanceModal({
       }
 
       if (insertError) {
-        console.error("Failed to insert help request into Supabase:", insertError);
-        toast.error(
-          language === "ar"
-            ? "\u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u0625\u0631\u0633\u0627\u0644: " + insertError.message
-            : "Submission error: " + insertError.message
-        );
+        console.error("[Supabase Help Request Error]:", insertError);
+        let friendlyMsg = insertError.message || "Failed to submit help request.";
+
+        // Specific, helpful message if table doesn't exist in Supabase schema cache
+        if (
+          insertError.code === "PGRST205" ||
+          insertError.message?.includes("help_requests") ||
+          insertError.message?.includes("schema cache")
+        ) {
+          friendlyMsg =
+            language === "ar"
+              ? "\u062c\u062f\u0648\u0644 'help_requests' \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f \u0641\u064a Supabase. \u064a\u0631\u062c\u0649 \u062a\u0634\u063a\u064a\u0644 \u0643\u0648\u062f SQL \u0641\u064a \u0644\u0648\u062d\u0629 Supabase SQL Editor."
+              : "Table 'help_requests' was not found in Supabase. Please run the provided SQL setup script in your Supabase SQL Editor.";
+        } else if (insertError.code === "42501" || insertError.message?.includes("row-level security")) {
+          friendlyMsg =
+            language === "ar"
+              ? "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0623\u0645\u0627\u0646 (RLS) \u062a\u0645\u0646\u0639 \u0627\u0644\u0625\u0631\u0633\u0627\u0644. \u064a\u0631\u062c\u0649 \u062a\u0637\u0628\u064a\u0642 \u0633\u064a\u0627\u0633\u0627\u062a RLS \u0645\u0646 \u0643\u0648\u062f SQL."
+              : "Row-level security policy violation. Please apply the RLS policies in Supabase SQL Editor.";
+        }
+
+        toast.error(friendlyMsg);
         setIsSubmitting(false);
         return;
       }

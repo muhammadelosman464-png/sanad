@@ -119,8 +119,27 @@ export default function AdminDashboardModal({ isOpen, onClose }: AdminDashboardP
         });
 
       if (uploadError) {
-        console.error("Storage upload failed:", uploadError);
-        toast.error(`Storage error: ${uploadError.message}`);
+        console.error("[Supabase Storage Upload Error]:", uploadError);
+        let friendly = `Storage error: ${uploadError.message}`;
+        if (
+          uploadError.message?.toLowerCase().includes("bucket not found") ||
+          (uploadError as any).statusCode === "404" ||
+          (uploadError as any).status === 404
+        ) {
+          friendly =
+            language === "ar"
+              ? "\u062d\u0627\u0648\u064a\u0629 \u0627\u0644\u062a\u062e\u0632\u064a\u0646 'products' \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f\u0629 \u0641\u064a Supabase. \u064a\u0631\u062c\u0649 \u062a\u0634\u063a\u064a\u0644 \u0643\u0648\u062f SQL \u0641\u064a \u0644\u0648\u062d\u0629 Supabase SQL Editor."
+              : "Storage bucket 'products' not found. Please create the public 'products' bucket or run the SQL setup script.";
+        } else if (
+          (uploadError as any).statusCode === "403" ||
+          uploadError.message?.toLowerCase().includes("security policy")
+        ) {
+          friendly =
+            language === "ar"
+              ? "\u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0623\u0645\u0627\u0646 (RLS) \u062a\u0645\u0646\u0639 \u0631\u0641\u0639 \u0627\u0644\u0635\u0648\u0631. \u064a\u0631\u062c\u0649 \u062a\u0637\u0628\u064a\u0642 \u0633\u064a\u0627\u0633\u0627\u062a Storage \u0645\u0646 \u0643\u0648\u062f SQL."
+              : "Storage security policy violation (RLS). Please apply the storage policies in Supabase SQL Editor.";
+        }
+        toast.error(friendly);
         return null;
       }
 
@@ -147,9 +166,12 @@ export default function AdminDashboardModal({ isOpen, onClose }: AdminDashboardP
     try {
       if (imageFile) {
         const uploadedUrl = await uploadToStorage(imageFile, "product");
-        if (uploadedUrl) {
-          publicImageUrl = uploadedUrl;
+        if (!uploadedUrl) {
+          // Storage upload failed; stop to prevent fake success
+          setUploading(false);
+          return;
         }
+        publicImageUrl = uploadedUrl;
       }
 
       await addService({
