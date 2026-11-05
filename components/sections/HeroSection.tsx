@@ -37,7 +37,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-5">
+    <section className="relative overflow-hidden px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-4">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-full [perspective:1200px]">
         <div className="absolute inset-x-6 sm:inset-x-16 top-4 h-[85%] rounded-[40px] border border-[#ffd700]/20 bg-gradient-to-br from-[#ffd700]/10 via-transparent to-transparent [transform:rotateX(10deg)_rotateY(-6deg)] [transform-origin:top_center]" />
       </div>
@@ -67,7 +67,7 @@ export default function HeroSection() {
           </div>
         </motion.div>
 
-        <div className="mt-5 flex items-center gap-3 overflow-hidden rounded-full border border-white/70 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl shadow-md py-2 ps-4">
+        <div className="mt-4 flex items-center gap-3 overflow-hidden rounded-full border border-white/70 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl shadow-md py-1.5 ps-4">
           <span className="shrink-0 rounded-full bg-brand-700 px-3 py-1 text-xs font-bold text-white">{text.tickerLabel}</span>
           <div className="relative flex-1 overflow-hidden">
             <div className="flex w-max animate-marquee gap-10 whitespace-nowrap">

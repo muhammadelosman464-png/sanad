@@ -180,7 +180,7 @@ export default function PricingSection() {
   return (
     <section
       id="pricing"
-      className="py-24 relative overflow-hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
+      className="py-10 sm:py-14 relative overflow-hidden bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800"
     >
       {/* Background accent */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent" />
@@ -192,7 +192,7 @@ export default function PricingSection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          className="text-center max-w-3xl mx-auto mb-8 sm:mb-10"
         >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-semibold mb-3">
             <Zap className="w-3.5 h-3.5" />
@@ -215,7 +215,7 @@ export default function PricingSection() {
         </motion.div>
 
         {/* Plan cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 items-stretch">
           {plans.map((plan, idx) => (
             <motion.div
               key={plan.id}
@@ -223,7 +223,7 @@ export default function PricingSection() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: idx * 0.1 }}
               viewport={{ once: true }}
-              className={`relative rounded-3xl p-8 flex flex-col justify-between transition-all duration-300 ${
+              className={`relative rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 ${
                 plan.isPopular
                   ? "bg-slate-950 text-white border-2 border-brand-500 shadow-2xl shadow-brand-500/20 scale-[1.02]"
                   : "bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-lg"
@@ -243,7 +243,7 @@ export default function PricingSection() {
               <div>
                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                 <p
-                  className={`text-xs leading-relaxed mb-6 ${
+                  className={`text-xs leading-relaxed mb-3 ${
                     plan.isPopular
                       ? "text-slate-300"
                       : "text-slate-500 dark:text-slate-400"
@@ -253,7 +253,7 @@ export default function PricingSection() {
                 </p>
 
                 {/* Price */}
-                <div className="flex items-baseline gap-1 mb-6">
+                <div className="flex items-baseline gap-1 mb-3">
                   <span className="text-4xl sm:text-5xl font-black">
                     {plan.price}
                   </span>
@@ -269,13 +269,13 @@ export default function PricingSection() {
                 </div>
 
                 <div
-                  className={`border-t mb-6 ${
+                  className={`border-t mb-4 ${
                     plan.isPopular ? "border-slate-800" : "border-slate-100 dark:border-slate-800"
                   }`}
                 />
 
                 {/* Features list */}
-                <ul className="space-y-3.5 mb-8 text-xs sm:text-sm">
+                <ul className="space-y-2.5 mb-5 text-xs sm:text-sm">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2.5">
                       <Check
@@ -302,7 +302,7 @@ export default function PricingSection() {
               {/* CTA button */}
               <button
                 onClick={() => handleCheckout(plan.variantId)}
-                className={`w-full py-3.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 ${
+                className={`w-full py-2.5 px-4 rounded-xl font-semibold text-sm transition flex items-center justify-center gap-2 ${
                   plan.isPopular
                     ? "bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/30"
                     : "bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900"
@@ -316,7 +316,7 @@ export default function PricingSection() {
         </div>
 
         {/* Bottom trust row */}
-        <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-500" />
             <span>

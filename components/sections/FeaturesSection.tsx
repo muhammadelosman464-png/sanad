@@ -92,11 +92,11 @@ export default function FeaturesSection() {
   return (
     <section
       id="how-it-works"
-      className="py-24 bg-white dark:bg-slate-900 relative border-t border-slate-200 dark:border-slate-800"
+      className="py-10 sm:py-14 bg-white dark:bg-slate-900 relative border-t border-slate-200 dark:border-slate-800"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-2 block">
             {language === "ar"
               ? "لماذا سَنَد؟"
@@ -113,19 +113,19 @@ export default function FeaturesSection() {
         </div>
 
         {/* 3 Core pillars */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 mb-10 sm:mb-12">
           {features.map((feat, idx) => {
             const Icon = feat.icon;
             return (
               <div
                 key={idx}
-                className="group relative p-8 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-brand-500/40 dark:hover:border-brand-500/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
+                className="group relative p-5 sm:p-6 rounded-3xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-brand-500/40 dark:hover:border-brand-500/40 transition-all duration-300 shadow-sm hover:shadow-xl hover:-translate-y-1 overflow-hidden"
               >
                 <div
                   className={`absolute -right-12 -top-12 w-36 h-36 bg-gradient-to-br ${feat.gradient} rounded-full blur-2xl group-hover:scale-125 transition-transform`}
                 />
 
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div
                     className={`p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 ${feat.accent}`}
                   >
@@ -150,12 +150,12 @@ export default function FeaturesSection() {
         {/* How It Works — 3 steps */}
         <div
           id="trust"
-          className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-slate-800 relative overflow-hidden"
+          className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 text-white border border-slate-800 relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 text-center mb-10">
+          <div className="relative z-10 text-center mb-6">
             <span className="text-xs uppercase font-bold tracking-widest text-rose-400 mb-2 block">
               {language === "ar"
                 ? "كيف تعمل المنصة"

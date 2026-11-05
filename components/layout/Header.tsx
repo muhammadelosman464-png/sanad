@@ -347,16 +347,22 @@ export default function Header() {
             </button>
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 shrink-0">
-              <div className="relative w-10 h-10 rounded-2xl overflow-hidden bg-white/10 shadow ring-1 ring-white/20">
+            <Link href="/" className="flex items-center gap-2.5 sm:gap-3 shrink-0 group">
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl overflow-hidden bg-white/10 shadow ring-1 ring-white/20 group-hover:ring-[#d4af37]/50 transition">
                 <Image src="/logo.jpeg" alt="Sanad" fill sizes="40px" className="object-cover" priority />
               </div>
-              <div className="hidden sm:block">
-                <span className="font-black text-xl tracking-tight text-white">
-                  {language === "ar" ? "\u0633\u064e\u0646\u064e\u062f" : "Sanad"}
-                </span>
-                <span className="block text-[10px] text-[#d4af37] -mt-1 font-semibold">
-                  {language === "ar" ? "\u0645\u0639\u0627\u064b \u0644\u0646\u064f\u0639\u064a\u0646" : "Care Across Borders"}
+              <div className="hidden sm:flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 leading-none">
+                  <span className="font-black text-lg sm:text-xl tracking-tight text-white">
+                    سَنَد
+                  </span>
+                  <span className="text-[#d4af37] font-semibold text-sm sm:text-base">-</span>
+                  <span className="font-black text-xs sm:text-sm tracking-wider text-[#d4af37] uppercase">
+                    SANAD
+                  </span>
+                </div>
+                <span className="text-[10px] text-white/60 font-medium mt-1">
+                  {language === "ar" ? "معاً لنُعين" : "Care Across Borders"}
                 </span>
               </div>
             </Link>

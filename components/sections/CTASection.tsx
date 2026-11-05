@@ -48,7 +48,7 @@ export default function CTASection() {
     language === "ar" ? obj.ar : language === "tr" ? obj.tr : obj.en;
 
   return (
-    <section className="py-24 relative overflow-hidden bg-gradient-to-br from-slate-900 via-brand-950 to-slate-950 border-t border-slate-800">
+    <section className="py-10 sm:py-14 relative overflow-hidden bg-gradient-to-br from-slate-900 via-brand-950 to-slate-950 border-t border-slate-800">
       {/* Decorative blobs */}
       <div className="absolute top-0 start-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 end-0 w-96 h-96 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
@@ -76,7 +76,7 @@ export default function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider mb-6"
+          className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-bold uppercase tracking-wider mb-3"
         >
           <Heart className="w-3.5 h-3.5 fill-current" />
           <span>{get(copy.preTitle)}</span>
@@ -88,7 +88,7 @@ export default function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
           viewport={{ once: true }}
-          className="text-3xl sm:text-5xl font-extrabold text-white leading-tight mb-6"
+          className="text-2xl sm:text-4xl font-extrabold text-white leading-tight mb-3"
         >
           {get(copy.title)}
         </motion.h2>
@@ -99,7 +99,7 @@ export default function CTASection() {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
           viewport={{ once: true }}
-          className="text-base sm:text-lg text-slate-300 leading-relaxed mb-10 max-w-2xl mx-auto"
+          className="text-sm sm:text-base text-slate-300 leading-relaxed mb-6 max-w-2xl mx-auto"
         >
           {get(copy.subtitle)}
         </motion.p>
@@ -115,7 +115,7 @@ export default function CTASection() {
           {/* Primary CTA */}
           <button
             onClick={() => setAuthOpen(true)}
-            className="group w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-rose-600 to-brand-600 hover:from-rose-700 hover:to-brand-700 text-white font-bold text-base shadow-2xl shadow-rose-500/25 transition-all hover:-translate-y-0.5"
+            className="group w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-brand-600 hover:from-rose-700 hover:to-brand-700 text-white font-bold text-sm sm:text-base shadow-xl shadow-rose-500/25 transition-all hover:-translate-y-0.5"
           >
             <Heart className="w-5 h-5 fill-current" />
             <span>{get(copy.cta1)}</span>
@@ -127,7 +127,7 @@ export default function CTASection() {
             href="https://wa.me/905347757737"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40 text-white font-semibold text-base transition-all"
+            className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40 text-white font-semibold text-sm sm:text-base transition-all"
           >
             <MessageCircle className="w-5 h-5 text-emerald-400" />
             <span>{get(copy.cta2)}</span>
@@ -140,7 +140,7 @@ export default function CTASection() {
           whileInView={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           viewport={{ once: true }}
-          className="mt-8 text-slate-500 text-xs"
+          className="mt-5 text-slate-500 text-xs"
         >
           {language === "ar"
             ? "✓ مجاني للبدء · ✓ بدون بيانات بنكية · ✓ ضمان استرداد كامل عند عدم التسليم"
