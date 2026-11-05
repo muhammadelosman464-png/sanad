@@ -124,22 +124,22 @@ export default function TestimonialsSection() {
   const active = TESTIMONIALS[activeIndex];
 
   return (
-    <section className="py-10 sm:py-14 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 relative overflow-hidden">
+    <section className="py-6 sm:py-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 relative overflow-hidden">
       {/* Ambient glows */}
       <div className="absolute top-0 start-1/4 w-96 h-96 bg-rose-200/20 dark:bg-rose-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 end-1/4 w-96 h-96 bg-brand-200/20 dark:bg-brand-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Heading */}
-        <div className="text-center mb-8 sm:mb-10">
-          <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2 block">
+        <div className="text-center mb-4 sm:mb-5">
+          <span className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-1 block">
             {language === "ar"
               ? "قصص حقيقية من عائلات حقيقية"
               : language === "tr"
               ? "Gerçek Ailelerden Gerçek Hikayeler"
               : "Real Stories from Real Families"}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
             {language === "ar"
               ? "لأن كل رسالة دعم تصنع فرقاً"
               : language === "tr"
@@ -149,7 +149,7 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Featured testimonial card */}
-        <div className="max-w-3xl mx-auto mb-6 sm:mb-8">
+        <div className="max-w-3xl mx-auto mb-3 sm:mb-4">
           <AnimatePresence mode="wait">
             <motion.div
               key={active.id}
@@ -157,7 +157,7 @@ export default function TestimonialsSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-xl relative overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-md relative overflow-hidden"
             >
               {/* Decorative quote icon */}
               <div className="absolute top-6 end-8 text-slate-100 dark:text-slate-800">
@@ -165,12 +165,12 @@ export default function TestimonialsSection() {
               </div>
 
               {/* Service badge */}
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50 text-xs font-bold text-rose-700 dark:text-rose-300 mb-3">
+              <div className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/50 text-xs font-bold text-rose-700 dark:text-rose-300 mb-1.5">
                 {active.service}
               </div>
 
               {/* Stars */}
-              <div className="flex items-center gap-0.5 mb-2">
+              <div className="flex items-center gap-0.5 mb-1.5">
                 {Array.from({ length: active.rating }).map((_, i) => (
                   <Star
                     key={i}
@@ -180,14 +180,14 @@ export default function TestimonialsSection() {
               </div>
 
               {/* Quote text */}
-              <p className="text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-relaxed font-medium mb-4 relative z-10">
+              <p className="text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-normal font-medium mb-2.5 relative z-10">
                 &ldquo;{getText(active)}&rdquo;
               </p>
 
               {/* Author */}
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-12 h-12 rounded-full bg-gradient-to-br ${active.avatarColor} flex items-center justify-center text-white font-extrabold text-lg shrink-0`}
+                  className={`w-9 h-9 rounded-full bg-gradient-to-br ${active.avatarColor} flex items-center justify-center text-white font-bold text-sm shrink-0`}
                 >
                   {active.avatarInitial}
                 </div>
@@ -204,10 +204,10 @@ export default function TestimonialsSection() {
           </AnimatePresence>
 
           {/* Navigation controls */}
-          <div className="flex items-center justify-center gap-6 mt-4 sm:mt-5">
+          <div className="flex items-center justify-center gap-4 mt-2.5 sm:mt-3">
             <button
               onClick={prev}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-brand-400 dark:hover:border-brand-500 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-brand-400 dark:hover:border-brand-500 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition"
               aria-label="Previous testimonial"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -231,7 +231,7 @@ export default function TestimonialsSection() {
 
             <button
               onClick={next}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-brand-400 dark:hover:border-brand-500 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-brand-400 dark:hover:border-brand-500 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition"
               aria-label="Next testimonial"
             >
               <ChevronRight className="w-5 h-5" />
@@ -240,12 +240,12 @@ export default function TestimonialsSection() {
         </div>
 
         {/* Mini thumbnail row — all 4 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
           {TESTIMONIALS.map((t, i) => (
             <button
               key={t.id}
               onClick={() => setActiveIndex(i)}
-              className={`p-4 rounded-2xl text-start border transition-all ${
+              className={`p-2.5 rounded-xl text-start border transition-all ${
                 i === activeIndex
                   ? "bg-white dark:bg-slate-900 border-rose-400/60 dark:border-rose-500/50 shadow-md"
                   : "bg-slate-100/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300"
