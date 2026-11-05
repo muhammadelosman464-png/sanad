@@ -39,6 +39,22 @@ interface AuthModalProps {
   initialMode?: Mode;
 }
 
+function formatE164Phone(raw: string): string {
+  if (!raw) return "";
+  let clean = raw.replace(/[^\d+]/g, "");
+  if (!clean) return "";
+  if (clean.startsWith("00")) {
+    clean = "+" + clean.slice(2);
+  } else if (!clean.startsWith("+")) {
+    if (clean.startsWith("0")) {
+      clean = "+90" + clean.slice(1);
+    } else {
+      clean = "+" + clean;
+    }
+  }
+  return clean;
+}
+
 export default function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
   const { language } = useLanguage();
   const isAr = language === "ar";
@@ -203,17 +219,21 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
         }
 
         const fullName = name.trim();
-        const userPhone = phone.trim();
+        const formattedPhone = formatE164Phone(phone.trim());
         const cleanEmail = email.trim().toLowerCase();
 
         // Direct Supabase signUp strictly passing full_name and phone in options.data
+        // Populates Display Name and Phone keys for Supabase Auth UI recognition
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: cleanEmail,
           password: password,
           options: {
             data: {
               full_name: fullName,
-              phone: userPhone,
+              name: fullName,
+              display_name: fullName,
+              phone: formattedPhone,
+              phone_number: formattedPhone,
             },
             emailRedirectTo:
               typeof window !== "undefined"
@@ -243,7 +263,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
                   id: newUser.id,
                   email: newUser.email ?? cleanEmail,
                   full_name: fullName,
-                  phone: userPhone,
+                  phone: formattedPhone,
                   updated_at: new Date().toISOString(),
                 },
                 { onConflict: "id" }

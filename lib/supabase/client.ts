@@ -115,7 +115,15 @@ export async function signUpWithEmail(
   if (!supabase) return { success: false, error: "Authentication unavailable." };
   try {
     const fullName = metadata?.full_name || metadata?.name || "";
-    const phone = metadata?.phone || "";
+    const rawPhone = metadata?.phone || "";
+    let formattedPhone = rawPhone.replace(/[^\d+]/g, "");
+    if (formattedPhone && !formattedPhone.startsWith("+")) {
+      if (formattedPhone.startsWith("0")) {
+        formattedPhone = "+90" + formattedPhone.slice(1);
+      } else {
+        formattedPhone = "+" + formattedPhone;
+      }
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
@@ -123,8 +131,10 @@ export async function signUpWithEmail(
       options: {
         data: {
           full_name: fullName,
-          phone: phone,
+          name: fullName,
           display_name: fullName,
+          phone: formattedPhone,
+          phone_number: formattedPhone,
           ...metadata,
         },
         emailRedirectTo:
@@ -142,7 +152,7 @@ export async function signUpWithEmail(
             id: data.user.id,
             email: data.user.email ?? email.trim().toLowerCase(),
             full_name: fullName,
-            phone: phone,
+            phone: formattedPhone,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "id" }
