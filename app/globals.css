@@ -175,3 +175,96 @@ body {
   outline-offset: 3px;
   border-radius: 6px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SANAD PREMIUM DESIGN SYSTEM — Gold / Forest Green
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Light Mode palette overrides ──────────────────────────────────────── */
+html:not(.dark) body {
+  background-color: #fbf7ec;
+  color: #1a1a1a;
+}
+
+html:not(.dark) ::selection {
+  background: rgba(212, 175, 55, 0.3);
+}
+
+/* ── Dark Mode palette overrides ───────────────────────────────────────── */
+html.dark body {
+  background-color: #1d3023;
+  color: #f1f5f9;
+}
+
+html.dark ::selection {
+  background: rgba(212, 175, 55, 0.25);
+}
+
+/* Scrollbar gold tint in dark mode */
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.25);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.4);
+}
+
+/* Focus ring gold */
+html.dark :focus-visible {
+  outline-color: #d4af37;
+}
+
+/* ── Glassmorphism panels (upgraded) ───────────────────────────────────── */
+@layer components {
+  .glass-gold {
+    background: rgba(212, 175, 55, 0.08);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 1.5rem;
+  }
+
+  .dark .glass-gold {
+    background: rgba(29, 48, 35, 0.75);
+    border-color: rgba(212, 175, 55, 0.18);
+  }
+
+  /* Cards with 3D depth hint */
+  .card-3d {
+    transform: perspective(800px) rotateX(0deg);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
+  }
+
+  .card-3d:hover {
+    transform: perspective(800px) rotateX(2deg) translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(212, 175, 55, 0.08);
+  }
+
+  /* Smooth theme transitions */
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease !important;
+  }
+}
+
+/* ── Gold glow utility ─────────────────────────────────────────────────── */
+@layer utilities {
+  .glow-gold {
+    box-shadow: 0 0 24px rgba(212, 175, 55, 0.25), 0 0 8px rgba(212, 175, 55, 0.12);
+  }
+
+  .text-gold {
+    color: #d4af37;
+  }
+
+  .bg-forest {
+    background-color: #1d3023;
+  }
+
+  .hero-parallax {
+    transform: perspective(1200px) rotateX(6deg) translateZ(-20px);
+    transform-origin: center top;
+  }
+}

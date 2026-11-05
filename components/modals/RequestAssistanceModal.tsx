@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, HandHeart, X } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import NumberInput from "@/components/ui/NumberInput";
+import { supabase, saveHelpRequest } from "@/lib/supabase/client";
 
 export interface AssistanceRequest {
   id: string;
@@ -41,11 +42,25 @@ export default function RequestAssistanceModal({ isOpen, onClose, onSubmit }: Re
     onClose();
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
     onSubmit({ id: `request-${Date.now()}`, message: message.trim(), amount });
+
+    // Save to Supabase (non-blocking)
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      saveHelpRequest({
+        user_id: user?.id,
+        user_email: user?.email,
+        user_name: user?.user_metadata?.full_name,
+        user_phone: user?.user_metadata?.phone,
+        message: message.trim(),
+        amount_usd: amount,
+      });
+    }
+
     setMessage("");
     setAmount(DEFAULT_AMOUNT);
     setFormKey((key) => key + 1);

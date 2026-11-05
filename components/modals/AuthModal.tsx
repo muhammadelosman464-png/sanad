@@ -1,17 +1,11 @@
 "use client";
 
 /**
- * AuthModal
- * ---------------------------------------------------------------------------
- * Handles Login and Register flows for Sanad.
- *
- * Update 4 -- Phone Number field in Sign-Up:
- *   - Elegant input with country-code placeholder (+90)
- *   - Passed to signUpWithEmail() as options.data.phone metadata
- *     so it persists in Supabase auth.users.raw_user_meta_data
- *
- * All other auth logic unchanged (Google OAuth, email/password, error toasts).
- * ---------------------------------------------------------------------------
+ * AuthModal - Cream/Gold/White elegant design.
+ * Perfectly centered: fixed inset-0 z-[100] flex items-center justify-center
+ * Accepts initialMode prop to open in login or register mode.
+ * AuthResult returns { success, error?: string } - no .message needed.
+ * signUpWithEmail(email, password, metadata?) - metadata is Record<string,string>.
  */
 
 import React, { useState, useEffect } from "react";
@@ -26,7 +20,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Info,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import {
@@ -36,408 +29,379 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/client";
 
+type Mode = "login" | "register";
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: "login" | "register";
+  initialMode?: Mode;
 }
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  initialMode = "login",
-}: AuthModalProps) {
-  const { t, language } = useLanguage();
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
+export default function AuthModal({ isOpen, onClose, initialMode = "login" }: AuthModalProps) {
+  const { language } = useLanguage();
+  const isAr = language === "ar";
+
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  /* Reset state whenever the modal opens or mode prop changes */
+  // Sync mode with initialMode when modal opens
   useEffect(() => {
-    setMode(initialMode);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-    setPhone("");
-  }, [initialMode, isOpen]);
+    if (isOpen) {
+      setMode(initialMode);
+      setName(""); setEmail(""); setPassword(""); setPhone("");
+      setErrorMsg(null); setSuccessMsg(null); setLoading(false);
+    }
+  }, [isOpen, initialMode]);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setErrorMsg(null); setSuccessMsg(null);
+  }, [mode]);
 
-  /* ── Google OAuth ──────────────────────────────────────────────────────── */
-  const handleGoogleAuth = async () => {
+  // Translation map - all Arabic as Unicode escapes
+  const translations = {
+    ar: {
+      title: "\u0633\u064e\u0646\u064e\u062f",
+      subtitle: "\u0645\u0631\u062d\u0628\u0627\u064b \u0628\u0643",
+      loginTab: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644",
+      registerTab: "\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628",
+      googleBtn: "\u062a\u0633\u062c\u064a\u0644 \u0628\u0648\u0627\u0633\u0637\u0629 Google",
+      orContinue: "\u0623\u0648 \u062a\u0627\u0628\u0639 \u0628\u0640",
+      namePlaceholder: "\u0627\u0633\u0645\u0643 \u0627\u0644\u0643\u0627\u0645\u0644",
+      nameLabel: "\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644",
+      emailLabel: "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+      emailPlaceholder: "you@example.com",
+      passwordLabel: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631",
+      passwordPlaceholder: "\u0643\u0644\u0645\u0629 \u0627\u0644\u0645\u0631\u0648\u0631 (6+ \u0623\u062d\u0631\u0641)",
+      phoneLabel: "\u0631\u0642\u0645 \u0627\u0644\u0647\u0627\u062a\u0641",
+      phonePlaceholder: "+966 5xx xxx xxxx",
+      loginBtn: "\u062f\u062e\u0648\u0644",
+      registerBtn: "\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062d\u0633\u0627\u0628",
+      noAccount: "\u0644\u064a\u0633 \u0644\u062f\u064a\u0643 \u062d\u0633\u0627\u0628\u061f",
+      hasAccount: "\u0644\u062f\u064a\u0643 \u062d\u0633\u0627\u0628 \u0628\u0627\u0644\u0641\u0639\u0644\u061f",
+      createAccount: "\u0625\u0646\u0634\u0627\u0621 \u062d\u0633\u0627\u0628 \u062c\u062f\u064a\u062f",
+      login: "\u062f\u062e\u0648\u0644",
+      notConfigured: "\u0644\u0645 \u064a\u062a\u0645 \u062a\u0643\u0648\u064a\u0646 Supabase \u0628\u0639\u062f",
+      loginSuccess: "\u062a\u0645 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644 \u0628\u0646\u062c\u0627\u062d",
+      registerSuccess: "\u062a\u0645 \u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062d\u0633\u0627\u0628! \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a",
+    },
+    en: {
+      title: "Sanad",
+      subtitle: "Welcome back",
+      loginTab: "Log In",
+      registerTab: "Sign Up",
+      googleBtn: "Continue with Google",
+      orContinue: "Or continue with",
+      namePlaceholder: "Your full name",
+      nameLabel: "Full Name",
+      emailLabel: "Email Address",
+      emailPlaceholder: "you@example.com",
+      passwordLabel: "Password",
+      passwordPlaceholder: "Password (6+ chars)",
+      phoneLabel: "Phone Number",
+      phonePlaceholder: "+966 5xx xxx xxxx",
+      loginBtn: "Log In",
+      registerBtn: "Create Account",
+      noAccount: "Don't have an account?",
+      hasAccount: "Already have an account?",
+      createAccount: "Create new account",
+      login: "Log in",
+      notConfigured: "Supabase is not configured yet",
+      loginSuccess: "Logged in successfully!",
+      registerSuccess: "Account created! Check your email to verify.",
+    },
+    tr: {
+      title: "Sanad",
+      subtitle: "Ho\u015f geldiniz",
+      loginTab: "Giri\u015f",
+      registerTab: "Kay\u0131t",
+      googleBtn: "Google ile devam et",
+      orContinue: "Veya \u015funlarla devam et",
+      namePlaceholder: "Tam ad\u0131n\u0131z",
+      nameLabel: "Ad Soyad",
+      emailLabel: "E-posta",
+      emailPlaceholder: "you@example.com",
+      passwordLabel: "\u015eifre",
+      passwordPlaceholder: "\u015eifre (6+ karakter)",
+      phoneLabel: "Telefon Numaras\u0131",
+      phonePlaceholder: "+90 5xx xxx xxxx",
+      loginBtn: "Giri\u015f",
+      registerBtn: "Hesap Olu\u015ftur",
+      noAccount: "Hesab\u0131n\u0131z yok mu?",
+      hasAccount: "Zaten hesab\u0131n\u0131z var m\u0131?",
+      createAccount: "Yeni hesap olu\u015ftur",
+      login: "Giri\u015f",
+      notConfigured: "Supabase hen\u00fcz yap\u0131land\u0131r\u0131lmad\u0131",
+      loginSuccess: "Ba\u015far\u0131yla giri\u015f yap\u0131ld\u0131!",
+      registerSuccess: "Hesap olu\u015fturuldu! E-postan\u0131z\u0131 do\u011frulayun.",
+    },
+  };
+
+  const t = translations[language as keyof typeof translations] ?? translations.en;
+
+  async function handleGoogleSignIn() {
+    if (!isSupabaseConfigured) {
+      setErrorMsg(t.notConfigured);
+      return;
+    }
     setLoading(true);
     setErrorMsg(null);
-    const result = await signInWithGoogle();
-    if (!result.success) {
-      setErrorMsg(result.error ?? "Google sign-in failed.");
+    try {
+      const result = await signInWithGoogle();
+      if (!result.success) setErrorMsg(result.error ?? "Unknown error");
+      else onClose();
+    } catch (e: unknown) {
+      setErrorMsg(e instanceof Error ? e.message : "Unknown error");
+    } finally {
       setLoading(false);
     }
-    /* On success the browser redirects automatically; keep loading spinner */
-  };
+  }
 
-  /* ── Email / Password ─────────────────────────────────────────────────── */
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isSupabaseConfigured) {
+      setErrorMsg(t.notConfigured);
+      return;
+    }
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-
-    if (mode === "register") {
-      /* Pass phone as metadata — stored in auth.users.raw_user_meta_data */
-      const result = await signUpWithEmail(email, password, {
-        full_name: fullName,
-        phone: phone.trim(),
-        preferred_lang: language,
-      });
-
-      if (!result.success) {
-        setErrorMsg(result.error ?? "Registration failed.");
+    try {
+      if (mode === "login") {
+        const result = await signInWithEmail(email, password);
+        if (!result.success) setErrorMsg(result.error ?? "Login failed");
+        else { setSuccessMsg(t.loginSuccess); setTimeout(onClose, 1200); }
       } else {
-        setSuccessMsg(
-          language === "ar"
-            ? "تم إنشاء الحساب! تحقق من بريدك الإلكتروني لتأكيد الحساب."
-            : language === "tr"
-            ? "Hesap olusturuldu! Dogrulama icin e-postanizi kontrol edin."
-            : "Account created! Check your email to verify your account."
-        );
+        const result = await signUpWithEmail(email, password, {
+          full_name: name,
+          phone: phone,
+          display_name: name,
+        });
+        if (!result.success) setErrorMsg(result.error ?? "Registration failed");
+        else setSuccessMsg(t.registerSuccess);
       }
-    } else {
-      const result = await signInWithEmail(email, password);
-      if (!result.success) {
-        setErrorMsg(result.error ?? "Login failed.");
-      } else {
-        onClose();
-      }
+    } catch (e: unknown) {
+      setErrorMsg(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
-  };
-
-  /* ── Translations ──────────────────────────────────────────────────────── */
-  const T = {
-    loginTitle:
-      language === "ar"
-        ? "مرحباً بعودتك"
-        : language === "tr"
-        ? "Tekrar Hosgeldiniz"
-        : "Welcome back",
-    registerTitle:
-      language === "ar"
-        ? "انضم إلى سَنَد"
-        : language === "tr"
-        ? "Sanad'a Katil"
-        : "Join Sanad",
-    loginSub:
-      language === "ar"
-        ? "سجّل الدخول لدعم عائلتك"
-        : language === "tr"
-        ? "Ailenizi desteklemek icin giris yapin"
-        : "Sign in to support your family",
-    registerSub:
-      language === "ar"
-        ? "ابدأ رحلة الدعم مجاناً"
-        : language === "tr"
-        ? "Ucretsiz destek yolculuguna baslayin"
-        : "Start your support journey for free",
-    fullName:
-      language === "ar"
-        ? "الاسم الكامل"
-        : language === "tr"
-        ? "Ad Soyad"
-        : "Full Name",
-    phoneLabel:
-      language === "ar"
-        ? "رقم الهاتف (اختياري)"
-        : language === "tr"
-        ? "Telefon Numarasi (Ihtiyari)"
-        : "Phone Number (optional)",
-    phonePlaceholder: "+90 555 123 4567",
-    emailLabel:
-      language === "ar"
-        ? "البريد الإلكتروني"
-        : language === "tr"
-        ? "E-posta Adresi"
-        : "Email Address",
-    passwordLabel:
-      language === "ar"
-        ? "كلمة المرور"
-        : language === "tr"
-        ? "Sifre"
-        : "Password",
-    orContinueWith:
-      language === "ar"
-        ? "أو تابع بـ"
-        : language === "tr"
-        ? "veya ile devam et"
-        : "or continue with",
-    noAccount:
-      language === "ar"
-        ? "ليس لديك حساب؟"
-        : language === "tr"
-        ? "Hesabiniz yok mu?"
-        : "Don't have an account?",
-    hasAccount:
-      language === "ar"
-        ? "لديك حساب بالفعل؟"
-        : language === "tr"
-        ? "Zaten hesabiniz var mi?"
-        : "Already have an account?",
-    processing:
-      language === "ar"
-        ? "جارٍ المعالجة..."
-        : language === "tr"
-        ? "Isleniyor..."
-        : "Processing...",
-    configWarning:
-      language === "ar"
-        ? "المصادقة غير مهيأة. يُرجى إضافة بيانات Supabase إلى ملف .env.local."
-        : language === "tr"
-        ? "Kimlik dogrulama yapilandirilmamis. Lutfen .env.local dosyasina Supabase kimlik bilgilerini ekleyin."
-        : "Authentication is not configured yet. Please add your Supabase credentials to .env.local.",
-  };
+  }
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
-
-        {/* Modal */}
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          transition={{ type: "spring", duration: 0.4 }}
-          className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 overflow-hidden"
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto"
+          dir={isAr ? "rtl" : "ltr"}
         >
-          {/* Accent glow */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
+          {/* Backdrop click to close */}
+          <div className="absolute inset-0" onClick={onClose} />
 
-          {/* Close */}
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="absolute top-5 end-5 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          {/* Modal Card - cream/gold design */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 24 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 24 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="relative w-full max-w-md bg-[#fdfaf4] border border-[#d4af37]/40 rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <X className="w-5 h-5" />
-          </button>
+            {/* Gold glow decorations */}
+            <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#d4af37]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-[#d4af37]/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Header */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-500 to-rose-500 shadow-lg shadow-brand-500/30 mb-4">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">
-              {mode === "login" ? T.loginTitle : T.registerTitle}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {mode === "login" ? T.loginSub : T.registerSub}
-            </p>
-          </div>
-
-          {/* Supabase not configured warning */}
-          {!isSupabaseConfigured && (
-            <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 px-4 py-3">
-              <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                {T.configWarning}
-              </p>
-            </div>
-          )}
-
-          {/* Error / Success banners */}
-          <AnimatePresence>
-            {errorMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mb-4 flex items-start gap-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 px-4 py-3"
-              >
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700 dark:text-red-300">{errorMsg}</p>
-              </motion.div>
-            )}
-            {successMsg && (
-              <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="mb-4 flex items-start gap-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 px-4 py-3"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-emerald-700 dark:text-emerald-300">{successMsg}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Google OAuth */}
-          <button
-            onClick={handleGoogleAuth}
-            disabled={loading || !isSupabaseConfigured}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-200 transition disabled:opacity-50 shadow-sm mb-5"
-          >
-            {/* Google SVG icon */}
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-            </svg>
-            {t("continueGoogle")}
-          </button>
-
-          {/* Divider */}
-          <div className="relative mb-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700" />
-            </div>
-            <div className="relative flex justify-center text-xs text-slate-400">
-              <span className="px-3 bg-white dark:bg-slate-900">{T.orContinueWith}</span>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleEmailAuth} className="space-y-4">
-
-            {/* Full Name (register only) */}
-            {mode === "register" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  {T.fullName}
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute start-3 top-3.5" />
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder={language === "ar" ? "محمد علي" : language === "tr" ? "Mehmet Ali" : "John Smith"}
-                    className="w-full ps-10 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Phone Number (register only) */}
-            {mode === "register" && (
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                  {T.phoneLabel}
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute start-3 top-3.5" />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder={T.phonePlaceholder}
-                    className="w-full ps-10 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white"
-                    dir="ltr"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1 ps-1">
-                  {language === "ar"
-                    ? "يُستخدم لتأكيد الطلبات. يُحفظ بشكل آمن."
-                    : language === "tr"
-                    ? "Siparis onaylama icin kullanilir. Guvenli sekilde saklanir."
-                    : "Used for order confirmation. Stored securely."}
-                </p>
-              </div>
-            )}
-
-            {/* Email */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                {T.emailLabel}
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute start-3 top-3.5" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full ps-10 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">
-                {T.passwordLabel}
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute start-3 top-3.5" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full ps-10 pe-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-
+            {/* Close button */}
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 mt-2 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-brand-500/25 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              type="button"
+              onClick={onClose}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full text-[#d4af37]/70 hover:text-[#d4af37] hover:bg-[#d4af37]/10 transition-all"
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>
-                {loading
-                  ? T.processing
-                  : mode === "login"
-                  ? t("login")
-                  : t("createAccount")}
-              </span>
+              <X size={18} />
             </button>
-          </form>
 
-          {/* Toggle Login / Register */}
-          <div className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
-            {mode === "login" ? (
-              <p>
-                {T.noAccount}{" "}
+            <div className="relative p-8">
+              {/* Header */}
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#d4af37] to-[#b8930a] mb-4 shadow-lg">
+                  <Sparkles className="text-white" size={26} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900">{t.title}</h2>
+                <p className="text-[#d4af37] font-semibold text-sm mt-1">{t.subtitle}</p>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex rounded-2xl bg-[#f0ead6] p-1 mb-6 border border-[#d4af37]/20">
+                {(["login", "register"] as Mode[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setMode(m)}
+                    className={`flex-1 py-2 px-3 rounded-xl text-sm font-bold transition-all ${
+                      mode === m
+                        ? "bg-gradient-to-r from-[#d4af37] to-[#b8930a] text-white shadow-md"
+                        : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {m === "login" ? t.loginTab : t.registerTab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Error / Success banners */}
+              {errorMsg && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 mb-4 text-sm">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+              {successMsg && (
+                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl px-4 py-3 mb-4 text-sm">
+                  <CheckCircle2 size={16} className="shrink-0" />
+                  <span>{successMsg}</span>
+                </div>
+              )}
+
+              {/* Google button */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white border border-[#d4af37]/30 text-slate-700 font-semibold hover:bg-[#fdfaf4] hover:border-[#d4af37]/60 transition-all shadow-sm mb-5 disabled:opacity-60"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                {t.googleBtn}
+              </button>
+
+              {/* Divider */}
+              <div className="relative mb-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#d4af37]/20" />
+                </div>
+                <div className="relative flex justify-center text-xs text-slate-400">
+                  <span className="bg-[#fdfaf4] px-3">{t.orContinue}</span>
+                </div>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {mode === "register" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t.nameLabel}</label>
+                    <div className="relative">
+                      <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60" />
+                      <input
+                        type="text"
+                        required
+                        placeholder={t.namePlaceholder}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#d4af37]/30 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t.emailLabel}</label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60" />
+                    <input
+                      type="email"
+                      required
+                      placeholder={t.emailPlaceholder}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#d4af37]/30 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">{t.passwordLabel}</label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      placeholder={t.passwordPlaceholder}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#d4af37]/30 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all text-sm"
+                    />
+                  </div>
+                </div>
+
+                {mode === "register" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">{t.phoneLabel}</label>
+                    <div className="relative">
+                      <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#d4af37]/60" />
+                      <input
+                        type="tel"
+                        required
+                        placeholder={t.phonePlaceholder}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#d4af37]/30 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#d4af37]/50 focus:border-[#d4af37] transition-all text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <button
-                  type="button"
-                  onClick={() => { setMode("register"); setErrorMsg(null); setSuccessMsg(null); }}
-                  className="text-brand-600 dark:text-brand-400 font-semibold hover:underline"
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#b8930a] text-white font-black text-sm shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 flex items-center justify-center gap-2 mt-2"
                 >
-                  {t("createAccount")}
+                  {loading ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    mode === "login" ? t.loginBtn : t.registerBtn
+                  )}
                 </button>
-              </p>
-            ) : (
-              <p>
-                {T.hasAccount}{" "}
-                <button
-                  type="button"
-                  onClick={() => { setMode("login"); setErrorMsg(null); setSuccessMsg(null); }}
-                  className="text-brand-600 dark:text-brand-400 font-semibold hover:underline"
-                >
-                  {t("login")}
-                </button>
-              </p>
-            )}
-          </div>
-        </motion.div>
-      </div>
+              </form>
+
+              {/* Toggle mode */}
+              <div className="text-center mt-5 text-xs text-slate-500">
+                {mode === "login" ? (
+                  <p>
+                    {t.noAccount}{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setMode("register"); setErrorMsg(null); setSuccessMsg(null); }}
+                      className="text-[#d4af37] font-bold hover:underline"
+                    >
+                      {t.createAccount}
+                    </button>
+                  </p>
+                ) : (
+                  <p>
+                    {t.hasAccount}{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setMode("login"); setErrorMsg(null); setSuccessMsg(null); }}
+                      className="text-[#d4af37] font-bold hover:underline"
+                    >
+                      {t.login}
+                    </button>
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </AnimatePresence>
   );
 }

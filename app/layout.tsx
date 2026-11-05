@@ -24,26 +24,24 @@ const cairo = Cairo({
   subsets: ["arabic", "latin"],
   variable: "--font-cairo",
   display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
-  title: "Sanad (سَنَد) | Expat Relocation, Legal & Local Service Ecosystem",
+  title: "Sanad | Your Bridge of Support Abroad",
   description:
-    "Sanad connects international residents, expats, and investors with vetted legal, real estate, and sworn translation services backed by 100% escrow milestone guarantees.",
+    "Sanad connects diaspora families with verified local services — food, fuel, medical, gifts and more. Every delivery guaranteed.",
   keywords: [
     "Sanad",
-    "سند",
     "Expat services",
-    "Turkey residency",
-    "Istanbul legal translation",
-    "Escrow service marketplace",
-    "Dubai expat legal",
-    "B2B service directory",
+    "Diaspora support",
+    "Family support abroad",
+    "Humanitarian aid",
   ],
   authors: [{ name: "Sanad Technologies Inc." }],
   openGraph: {
-    title: "Sanad (سَنَد) — Your Pillar of Support Abroad",
-    description: "Multilingual SaaS bridging expats and premier local providers with escrow protection.",
+    title: "Sanad — Your Pillar of Support Abroad",
+    description: "Multilingual platform bridging expats and trusted local providers.",
     type: "website",
     locale: "en_US",
   },
@@ -56,19 +54,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/*
-       * PREMIUM DARK GLOBAL BACKGROUND
-       * logo.jpeg = fixed watermark at opacity-[0.06] behind ALL pages.
-       * Two-layer overlay: slate-950 base + black/85 on top = ultra-dark.
-       * REMINDER: Place logo.jpeg in /public/logo.jpeg
-       */}
-      <body className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white relative bg-[#fbf7ec] dark:bg-[#1d3023]`}>
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden [perspective:1400px]" aria-hidden="true">
-          <div className="absolute inset-[-8%] bg-[url('/assets/images/WhatsApp_Image_2026-11-04_at_1.20.46_AM.jpeg')] bg-center bg-contain bg-no-repeat opacity-60 [transform:rotateX(8deg)_rotateY(-10deg)_translateZ(-40px)] [transform-origin:center_center]" />
-          <div className="absolute inset-0 bg-[#fbf7ec]/80 dark:bg-[#132a1c]/85" />
+      <body
+        className={`${inter.variable} ${cairo.variable} min-h-screen flex flex-col antialiased`}
+      >
+        {/* ── Fixed full-screen background image ───────────────────────── */}
+        <div
+          className="fixed inset-0 z-0 pointer-events-none"
+          aria-hidden="true"
+        >
+          {/* Background image layer */}
+          <div
+            className="absolute inset-0 bg-[url('/bg-ecommerce.png')] bg-fixed bg-cover bg-center bg-no-repeat"
+          />
+          {/* Dark overlay for readability */}
+          <div className="absolute inset-0 bg-black/60 dark:bg-black/70" />
         </div>
 
-        <div className="relative z-10 flex flex-col min-h-screen text-slate-900 dark:text-slate-100">
+        {/* ── App content (above background) ───────────────────────────── */}
+        <div className="relative z-10 flex flex-col min-h-screen text-white">
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -77,23 +80,19 @@ export default function RootLayout({
           >
             <LanguageProvider>
               <CatalogProvider>
-              <CartProvider>
-                <TopMiniBar />
-                <Header />
-                <main className="flex-1 flex flex-col pb-20 sm:pb-0">{children}</main>
-
-              {/* Unified Footer */}
-              <Footer />
-
-              {/* Floating Concierge Chatbot */}
-              <SupportFab />
-              <ChatWidget />
-              <MobileBottomNav />
-
-
-                <CartDrawer />
-                <ToastContainer />
-              </CartProvider>
+                <CartProvider>
+                  <TopMiniBar />
+                  <Header />
+                  <main className="flex-1 flex flex-col pb-20 sm:pb-0">
+                    {children}
+                  </main>
+                  <Footer />
+                  <SupportFab />
+                  <ChatWidget />
+                  <MobileBottomNav />
+                  <CartDrawer />
+                  <ToastContainer />
+                </CartProvider>
               </CatalogProvider>
             </LanguageProvider>
           </ThemeProvider>
