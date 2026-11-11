@@ -181,16 +181,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
     setLoading(true);
     setErrorMsg(null);
     try {
-      const redirectTo =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback`
-          : "/auth/callback";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-          queryParams: { access_type: "offline", prompt: "consent" },
-        },
       });
       if (error) {
         setErrorMsg(error.message ?? "Google sign in failed");

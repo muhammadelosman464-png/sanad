@@ -21,22 +21,30 @@ export async function GET(request: NextRequest) {
     // Upsert profile into DB after successful OAuth login
     if (data?.user) {
       const { user } = data;
-      const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false, autoRefreshToken: false } }
-      );
-      await supabaseAdmin.from("profiles").upsert({
-        id: user.id,
-        email: user.email ?? "",
-        full_name:
-          user.user_metadata?.full_name ??
-          user.user_metadata?.name ??
-          user.email?.split("@")[0] ??
-          "Unknown",
-        phone: user.user_metadata?.phone ?? user.phone ?? "",
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "id" });
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (serviceKey && supabaseUrl) {
+        try {
+          const supabaseAdmin = createClient(
+            supabaseUrl,
+            serviceKey,
+            { auth: { persistSession: false, autoRefreshToken: false } }
+          );
+          await supabaseAdmin.from("profiles").upsert({
+            id: user.id,
+            email: user.email ?? "",
+            full_name:
+              user.user_metadata?.full_name ??
+              user.user_metadata?.name ??
+              user.email?.split("@")[0] ??
+              "Unknown",
+            phone: user.user_metadata?.phone ?? user.phone ?? "",
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "id" });
+        } catch (adminErr) {
+          console.warn("[Sanad] OAuth profile sync skipped:", adminErr);
+        }
+      }
     }
   }
 

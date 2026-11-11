@@ -75,13 +75,8 @@ export async function syncUserProfile(user: User): Promise<void> {
 export async function signInWithGoogle(): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication not configured." };
   try {
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback`
-        : "/auth/callback";
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo, queryParams: { access_type: "offline", prompt: "consent" } },
     });
     if (error) return { success: false, error: error.message };
     return { success: true };
