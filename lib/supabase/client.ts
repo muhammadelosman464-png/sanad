@@ -85,20 +85,21 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       typeof window !== "undefined" && window.location.origin
         ? window.location.origin
         : "https://sanad-care-platform.netlify.app";
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/`,
-        queryParams: { prompt: "select_account" },
+        redirectTo: `${origin}/auth/callback`,
       },
     });
-    if (error) return { success: false, error: error.message };
-    if (data?.url && typeof window !== "undefined") {
-      window.location.href = data.url;
+    if (error) {
+      console.error("Google Auth Error:", error.message);
+      return { success: false, error: error.message };
     }
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Unexpected error." };
+    const msg = err instanceof Error ? err.message : "Unexpected error.";
+    console.error("Google Auth Error:", msg);
+    return { success: false, error: msg };
   }
 }
 

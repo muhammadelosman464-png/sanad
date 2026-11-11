@@ -134,16 +134,13 @@ export default function Footer() {
                       typeof window !== "undefined" && window.location.origin
                         ? window.location.origin
                         : "https://sanad-care-platform.netlify.app";
-                    const { data } = await supabase.auth.signInWithOAuth({
+                    const { error } = await supabase.auth.signInWithOAuth({
                       provider: "google",
                       options: {
-                        redirectTo: `${origin}/`,
-                        queryParams: { prompt: "select_account" },
+                        redirectTo: `${origin}/auth/callback`,
                       },
                     });
-                    if (data?.url) {
-                      window.location.href = data.url;
-                    }
+                    if (error) console.error("Google Auth Error:", error.message);
                   }
                 }}
                 aria-label="Google Sign In"

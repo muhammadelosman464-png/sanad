@@ -173,7 +173,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
 
   const t = translations[language as keyof typeof translations] ?? translations.en;
 
-  async function handleGoogleSignIn() {
+  const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured || !supabase) {
       setErrorMsg(t.notConfigured);
       return;
@@ -181,34 +181,27 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
     setLoading(true);
     setErrorMsg(null);
     try {
-      const origin =
-        typeof window !== "undefined" && window.location.origin
-          ? window.location.origin
-          : "https://sanad-care-platform.netlify.app";
-
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/`,
-          queryParams: {
-            prompt: "select_account",
-            access_type: "offline",
-          },
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) {
-        setErrorMsg(error.message ?? "Google sign in failed");
-      } else if (data?.url) {
-        window.location.href = data.url;
+        console.error("Google Auth Error:", error.message);
+        setErrorMsg(error.message);
       } else {
         onClose();
       }
     } catch (e: unknown) {
-      setErrorMsg(e instanceof Error ? e.message : "Unexpected error");
+      const msg = e instanceof Error ? e.message : "Google sign in failed";
+      console.error("Google Auth Error:", msg);
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
-  }
+  };
+  const handleGoogleSignIn = handleGoogleLogin;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -387,7 +380,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
               {/* Google OAuth Button */}
               <button
                 type="button"
-                onClick={handleGoogleSignIn}
+                onClick={handleGoogleLogin}
                 disabled={loading}
                 className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 border border-[#d4af37]/40 text-slate-800 dark:text-white font-semibold text-xs sm:text-sm hover:bg-[#fbf7ed] dark:hover:bg-slate-700 hover:border-[#d4af37] transition-all shadow-sm mb-4 disabled:opacity-60"
               >
