@@ -10,6 +10,7 @@ import {
   Bell,
   Camera,
   Check,
+  CheckCheck,
   ChevronDown,
   Clock,
   Inbox,
@@ -24,6 +25,8 @@ import {
   Phone,
   Search,
   ShoppingBag,
+  Sparkles,
+  Star,
   Trash2,
   User,
   X,
@@ -108,6 +111,22 @@ export default function Header() {
   const [passcodeModalOpen, setPasscodeModalOpen] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
   const [passcodeError, setPasscodeError] = useState("");
+
+  const {
+    notifications: reviewNotifications,
+    unreadCount: reviewUnreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+  } = useNotifications();
+
+  const [notifTab, setNotifTab] = useState<"reviews" | "requests">("reviews");
+
+  useEffect(() => {
+    if (reviewUnreadCount > 0) {
+      setNotifTab("reviews");
+    }
+  }, [reviewUnreadCount]);
 
   const handleVerifyPasscode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -429,9 +448,9 @@ export default function Header() {
                 aria-label={copy.alerts}
               >
                 <Bell className="w-5 h-5" />
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
-                    {pendingCount}
+                {(pendingCount + reviewUnreadCount) > 0 && (
+                  <span className="absolute -top-1 -end-1 min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse shadow-sm">
+                    {pendingCount + reviewUnreadCount}
                   </span>
                 )}
               </button>
@@ -533,7 +552,7 @@ export default function Header() {
                 <LanguageSwitcher />
               </div>
 
-              {/* Dynamic Notification Panel (Help Requests) */}
+              {/* Dynamic Notification Panel (Review AI Replies + Help Requests) */}
               <AnimatePresence>
                 {panel === "notifications" && (
                   <motion.div
@@ -541,164 +560,362 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -8, scale: 0.97 }}
                     transition={{ duration: 0.16 }}
-                    className="absolute end-0 top-14 w-[92vw] sm:w-[440px] max-w-[460px] rounded-3xl border border-[#d4af37]/35 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-4 sm:p-5 z-50 max-h-[85vh] overflow-y-auto"
+                    className="absolute end-0 top-14 w-[92vw] sm:w-[460px] max-w-[480px] rounded-3xl border border-[#d4af37]/35 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-4 sm:p-5 z-50 max-h-[85vh] overflow-y-auto [scrollbar-width:thin]"
                   >
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#d4af37]/20">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-[#d4af37]/20">
                       <div className="flex items-center gap-2">
-                        <Bell className="w-4 h-4 text-[#d4af37]" />
-                        <h3 className="font-black text-sm text-white">{copy.alerts}</h3>
+                        <div className="w-7 h-7 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37]">
+                          <Bell className="w-4 h-4" />
+                        </div>
+                        <h3 className="font-black text-sm text-white">
+                          {language === "ar" ? "مركز الإشعارات والتنبيهات" : "Notification Center"}
+                        </h3>
+                        {(pendingCount + reviewUnreadCount) > 0 && (
+                          <span className="text-[10px] font-black bg-[#d4af37] text-[#1d3023] px-2 py-0.5 rounded-full">
+                            {pendingCount + reviewUnreadCount}
+                          </span>
+                        )}
                       </div>
-                      <span className="text-[10px] font-black bg-[#d4af37] text-[#1d3023] px-2 py-0.5 rounded-full">
-                        {pendingRequests.length}
-                      </span>
+
+                      {notifTab === "reviews" && reviewUnreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllAsRead}
+                          className="text-[11px] text-[#d4af37] hover:text-[#ffd700] hover:underline flex items-center gap-1 font-semibold transition"
+                        >
+                          <CheckCheck className="w-3.5 h-3.5" />
+                          <span>{language === "ar" ? "تحديد الكل كمقروء" : "Mark all read"}</span>
+                        </button>
+                      )}
                     </div>
 
-                    {pendingRequests.length === 0 ? (
-                      <div className="text-center py-10 px-4">
-                        <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center mx-auto mb-3 text-[#d4af37]">
-                          <Bell className="w-6 h-6 opacity-60" />
-                        </div>
-                        <p className="text-sm font-bold text-white">{copy.empty}</p>
-                        <p className="text-xs text-white/40 mt-1">{copy.emptyHint}</p>
-                      </div>
-                    ) : (
-                      <ul className="space-y-3">
-                        {pendingRequests.map((req) => {
-                          const clientName =
-                            req.client_name ||
-                            req.full_name ||
-                            req.user_name ||
-                            (language === "ar" ? "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Applicant");
-                          const clientPhone =
-                            req.client_phone || req.phone || req.user_phone || "";
-                          const clientEmail =
-                            req.client_email || req.user_email || "";
-                          const serviceName =
-                            req.requested_service ||
-                            req.request_text ||
-                            (language === "ar" ? "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Help Request");
-                          const timeStr = formatRequestTime(req.created_at, language === "ar");
+                    {/* Dual Tabs: AI Review Replies vs Help Requests */}
+                    <div className="grid grid-cols-2 gap-1.5 p-1 mb-3.5 bg-black/40 rounded-2xl border border-white/5 text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setNotifTab("reviews")}
+                        className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                          notifTab === "reviews"
+                            ? "bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-[#0f1b13] shadow-md shadow-[#d4af37]/20"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{language === "ar" ? "ردود التقييمات الذكية" : "AI Review Replies"}</span>
+                        {reviewUnreadCount > 0 && (
+                          <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+                            {reviewUnreadCount}
+                          </span>
+                        )}
+                      </button>
 
-                          return (
-                            <motion.li
-                              key={req.id}
-                              layout
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              className="rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 hover:border-[#d4af37]/40 transition space-y-2.5"
-                            >
-                              {/* Top row: Client name and timestamp */}
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-8 h-8 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] shrink-0 font-black text-xs">
-                                    <User className="w-4 h-4" />
-                                  </div>
-                                  <div>
-                                    <h4 className="text-sm font-bold text-white leading-tight">
-                                      {clientName}
-                                    </h4>
-                                    {clientEmail && (
-                                      <p className="text-[11px] text-white/40">{clientEmail}</p>
+                      <button
+                        type="button"
+                        onClick={() => setNotifTab("requests")}
+                        className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                          notifTab === "requests"
+                            ? "bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-[#0f1b13] shadow-md shadow-[#d4af37]/20"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        <Package className="w-3.5 h-3.5" />
+                        <span>{language === "ar" ? "طلبات المساعدة" : "Help Requests"}</span>
+                        {pendingRequests.length > 0 && (
+                          <span className="min-w-4 h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center">
+                            {pendingRequests.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* TAB 1: AI Review Replies */}
+                    {notifTab === "reviews" && (
+                      <div className="space-y-3">
+                        {reviewNotifications.length === 0 ? (
+                          <div className="text-center py-10 px-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center mx-auto mb-3 text-[#d4af37]">
+                              <Sparkles className="w-6 h-6 opacity-75" />
+                            </div>
+                            <p className="text-sm font-bold text-white">
+                              {language === "ar"
+                                ? "لا توجد ردود على التقييمات بعد"
+                                : "No review replies yet"}
+                            </p>
+                            <p className="text-xs text-white/50 mt-1 max-w-xs mx-auto leading-relaxed">
+                              {language === "ar"
+                                ? "عند إضافة تقييم لأي خدمة، سيتولى Gemini AI الرد على مراجعتك فوراً وسيصلك إشعار بالرد هنا."
+                                : "When you submit a review, the Gemini AI responder will reply and notify you here."}
+                            </p>
+                          </div>
+                        ) : (
+                          <ul className="space-y-3">
+                            {reviewNotifications.map((notif) => {
+                              const timeStr = formatRequestTime(notif.timestamp, language === "ar");
+                              const isUnread = !notif.isRead && !notif.read;
+
+                              return (
+                                <motion.li
+                                  key={notif.id}
+                                  layout
+                                  className={`rounded-2xl p-4 border transition-all space-y-2.5 ${
+                                    isUnread
+                                      ? "bg-gradient-to-br from-[#1d3023] to-[#122216] border-[#d4af37]/60 shadow-lg shadow-[#d4af37]/10"
+                                      : "bg-white/[0.04] border-white/10 opacity-90"
+                                  }`}
+                                >
+                                  {/* Header row */}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#ffd700] to-[#b8930a] text-[#0f1b13] flex items-center justify-center font-bold shrink-0 shadow-sm">
+                                        <Sparkles className="w-4 h-4" />
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <h4 className="text-sm font-black text-white">
+                                            {language === "ar" ? "يوجد رد جديد على تقييمك للخدمة" : "New AI reply to your review"}
+                                          </h4>
+                                          {isUnread && (
+                                            <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black animate-pulse">
+                                              {language === "ar" ? "جديد" : "NEW"}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-[#d4af37] font-semibold mt-0.5">
+                                          {notif.serviceName || "خدمة سَنَد"}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {timeStr && (
+                                      <span className="text-[10px] text-white/50 shrink-0 flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                        <Clock className="w-3 h-3 text-[#d4af37]" />
+                                        {timeStr}
+                                      </span>
                                     )}
                                   </div>
-                                </div>
-                                {timeStr && (
-                                  <span className="text-[11px] text-white/50 flex items-center gap-1 shrink-0 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                                    <Clock className="w-3 h-3 text-[#d4af37]" />
-                                    <span>{timeStr}</span>
-                                  </span>
-                                )}
-                              </div>
 
-                              {/* Middle: Phone and Requested Service */}
-                              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                                {clientPhone ? (
-                                  <a
-                                    href={`tel:${clientPhone}`}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:border-emerald-400 transition"
-                                  >
-                                    <Phone className="w-3 h-3 text-emerald-400" />
-                                    <span dir="ltr">{clientPhone}</span>
-                                  </a>
-                                ) : (
-                                  <span className="text-xs text-white/40 italic">
-                                    {language === "ar" ? "\u0628\u062f\u0648\u0646 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641" : "No phone"}
-                                  </span>
-                                )}
+                                  {/* Original Review snippet */}
+                                  {notif.reviewText && (
+                                    <div className="bg-black/30 rounded-xl p-2.5 border border-white/5 text-xs">
+                                      <div className="flex items-center gap-1.5 mb-1">
+                                        <div className="flex text-amber-400">
+                                          {[1, 2, 3, 4, 5].map((s) => (
+                                            <Star
+                                              key={s}
+                                              className={`w-3 h-3 ${
+                                                s <= (notif.rating ?? 5) ? "fill-amber-400" : "text-white/20"
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                        {notif.customerName && (
+                                          <span className="text-white/50 text-[11px]">({notif.customerName})</span>
+                                        )}
+                                      </div>
+                                      <p className="text-slate-300 italic line-clamp-2">
+                                        "{notif.reviewText}"
+                                      </p>
+                                    </div>
+                                  )}
 
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 text-[#d4af37] text-xs font-bold">
-                                  <Package className="w-3.5 h-3.5 text-[#d4af37]" />
-                                  <span>{serviceName}</span>
-                                </div>
+                                  {/* AI Smart Response Box */}
+                                  <div className="rounded-xl p-3 bg-gradient-to-br from-[#132318] to-[#0d1810] border border-[#d4af37]/40 shadow-inner space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#d4af37]/20 border border-[#d4af37]/40 text-[#ffd700] text-[10px] font-black uppercase tracking-wider">
+                                        <Sparkles className="w-3 h-3 text-[#ffd700]" />
+                                        {language === "ar" ? "رد سَنَد الذكي · Gemini AI" : "Sanad AI Smart Reply"}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs sm:text-sm text-slate-100 font-medium leading-relaxed">
+                                      {notif.aiReply || notif.message}
+                                    </p>
+                                  </div>
 
-                                {req.amount_usd && req.amount_usd > 0 ? (
-                                  <span className="text-xs font-black text-amber-300 bg-amber-950/40 border border-amber-500/20 px-2 py-0.5 rounded-lg">
-                                    ${req.amount_usd}
-                                  </span>
-                                ) : null}
-                              </div>
+                                  {/* Action Buttons: Mark as Read & Dismiss */}
+                                  <div className="flex items-center justify-between pt-1">
+                                    {isUnread ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => markAsRead(notif.id)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#d4af37]/20 hover:bg-[#d4af37]/35 border border-[#d4af37]/50 text-xs font-bold text-[#ffd700] transition active:scale-95"
+                                      >
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>{language === "ar" ? "تحديد كمقروء" : "Mark as read"}</span>
+                                      </button>
+                                    ) : (
+                                      <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>{language === "ar" ? "تمت القراءة" : "Read"}</span>
+                                      </span>
+                                    )}
 
-                              {/* Description / message if distinct from service name */}
-                              {req.message && req.message !== serviceName && (
-                                <p className="text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5 leading-relaxed line-clamp-3">
-                                  {req.message}
-                                </p>
-                              )}
+                                    <button
+                                      type="button"
+                                      onClick={() => clearNotification(notif.id)}
+                                      className="text-white/40 hover:text-red-400 p-1.5 rounded-lg hover:bg-white/5 transition"
+                                      title={language === "ar" ? "حذف الإشعار" : "Dismiss"}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </motion.li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    )}
 
-                              {/* 4 Distinct Action Buttons */}
-                              <div className="pt-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                                {/* 1. Accept */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleAcceptRequest(req)}
-                                  className="py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
-                                  title={copy.accept}
+                    {/* TAB 2: Help Requests (Admin/Management) */}
+                    {notifTab === "requests" && (
+                      <div>
+                        {pendingRequests.length === 0 ? (
+                          <div className="text-center py-10 px-4">
+                            <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center mx-auto mb-3 text-[#d4af37]">
+                              <Bell className="w-6 h-6 opacity-60" />
+                            </div>
+                            <p className="text-sm font-bold text-white">{copy.empty}</p>
+                            <p className="text-xs text-white/40 mt-1">{copy.emptyHint}</p>
+                          </div>
+                        ) : (
+                          <ul className="space-y-3">
+                            {pendingRequests.map((req) => {
+                              const clientName =
+                                req.client_name ||
+                                req.full_name ||
+                                req.user_name ||
+                                (language === "ar" ? "\u0637\u0627\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Applicant");
+                              const clientPhone =
+                                req.client_phone || req.phone || req.user_phone || "";
+                              const clientEmail =
+                                req.client_email || req.user_email || "";
+                              const serviceName =
+                                req.requested_service ||
+                                req.request_text ||
+                                (language === "ar" ? "\u0637\u0644\u0628 \u0645\u0633\u0627\u0639\u062f\u0629" : "Help Request");
+                              const timeStr = formatRequestTime(req.created_at, language === "ar");
+
+                              return (
+                                <motion.li
+                                  key={req.id}
+                                  layout
+                                  exit={{ opacity: 0, scale: 0.95 }}
+                                  className="rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 hover:border-[#d4af37]/40 transition space-y-2.5"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>{copy.accept}</span>
-                                </button>
+                                  {/* Top row: Client name and timestamp */}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded-full bg-[#d4af37]/15 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] shrink-0 font-black text-xs">
+                                        <User className="w-4 h-4" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-sm font-bold text-white leading-tight">
+                                          {clientName}
+                                        </h4>
+                                        {clientEmail && (
+                                          <p className="text-[11px] text-white/40">{clientEmail}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {timeStr && (
+                                      <span className="text-[11px] text-white/50 flex items-center gap-1 shrink-0 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                                        <Clock className="w-3 h-3 text-[#d4af37]" />
+                                        <span>{timeStr}</span>
+                                      </span>
+                                    )}
+                                  </div>
 
-                                {/* 2. WhatsApp */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleWhatsAppContact(req)}
-                                  className="py-1.5 px-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
-                                  title={copy.whatsapp}
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5" />
-                                  <span className="truncate">{language === "ar" ? "\u0648\u0627\u062a\u0633\u0622\u0628" : "WhatsApp"}</span>
-                                </button>
+                                  {/* Middle: Phone and Requested Service */}
+                                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                                    {clientPhone ? (
+                                      <a
+                                        href={`tel:${clientPhone}`}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold hover:border-emerald-400 transition"
+                                      >
+                                        <Phone className="w-3 h-3 text-emerald-400" />
+                                        <span dir="ltr">{clientPhone}</span>
+                                      </a>
+                                    ) : (
+                                      <span className="text-xs text-white/40 italic">
+                                        {language === "ar" ? "\u0628\u062f\u0648\u0646 \u0631\u0642\u0645 \u0647\u0627\u062a\u0641" : "No phone"}
+                                      </span>
+                                    )}
 
-                                {/* 3. Reject */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRejectRequest(req)}
-                                  className="py-1.5 px-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
-                                  title={copy.reject}
-                                >
-                                  <XCircle className="w-3.5 h-3.5" />
-                                  <span>{copy.reject}</span>
-                                </button>
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#d4af37]/15 border border-[#d4af37]/30 text-[#d4af37] text-xs font-bold">
+                                      <Package className="w-3.5 h-3.5 text-[#d4af37]" />
+                                      <span>{serviceName}</span>
+                                    </div>
 
-                                {/* 4. Delete */}
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRequest(req.id)}
-                                  className="py-1.5 px-2 rounded-xl hover:bg-red-950/60 text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
-                                  title={copy.deleteLabel}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>{copy.deleteLabel}</span>
-                                </button>
-                              </div>
-                            </motion.li>
-                          );
-                        })}
-                      </ul>
+                                    {req.amount_usd && req.amount_usd > 0 ? (
+                                      <span className="text-xs font-black text-amber-300 bg-amber-950/40 border border-amber-500/20 px-2 py-0.5 rounded-lg">
+                                        ${req.amount_usd}
+                                      </span>
+                                    ) : null}
+                                  </div>
+
+                                  {/* Description / message if distinct from service name */}
+                                  {req.message && req.message !== serviceName && (
+                                    <p className="text-xs text-slate-300 bg-black/40 p-2.5 rounded-xl border border-white/5 leading-relaxed line-clamp-3">
+                                      {req.message}
+                                    </p>
+                                  )}
+
+                                  {/* 4 Distinct Action Buttons */}
+                                  <div className="pt-1 grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                    {/* 1. Accept */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleAcceptRequest(req)}
+                                      className="py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
+                                      title={copy.accept}
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>{copy.accept}</span>
+                                    </button>
+
+                                    {/* 2. WhatsApp */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleWhatsAppContact(req)}
+                                      className="py-1.5 px-2 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-1 transition shadow-sm active:scale-95"
+                                      title={copy.whatsapp}
+                                    >
+                                      <MessageCircle className="w-3.5 h-3.5" />
+                                      <span className="truncate">{language === "ar" ? "\u0648\u0627\u062a\u0633\u0622\u0628" : "WhatsApp"}</span>
+                                    </button>
+
+                                    {/* 3. Reject */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectRequest(req)}
+                                      className="py-1.5 px-2 rounded-xl bg-amber-600/20 hover:bg-amber-600/35 text-amber-300 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
+                                      title={copy.reject}
+                                    >
+                                      <XCircle className="w-3.5 h-3.5" />
+                                      <span>{copy.reject}</span>
+                                    </button>
+
+                                    {/* 4. Delete */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteRequest(req.id)}
+                                      className="py-1.5 px-2 rounded-xl hover:bg-red-950/60 text-red-400 border border-red-500/20 font-bold text-xs flex items-center justify-center gap-1 transition active:scale-95"
+                                      title={copy.deleteLabel}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      <span>{copy.deleteLabel}</span>
+                                    </button>
+                                  </div>
+                                </motion.li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
                     )}
                   </motion.div>
                 )}
-              </AnimatePresence>
-            </div>
+              </AnimatePresence>            </div>
           </div>
 
           {/* Mobile nav */}

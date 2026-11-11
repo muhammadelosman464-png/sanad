@@ -26,6 +26,9 @@ interface AddReviewModalProps {
   onReviewSubmitted?: (newReview: ReviewItem) => void;
 }
 
+const RENDER_BASE_URL = "https://smart-review-responder.onrender.com";
+const INTERNAL_SECRET = "AboIlyas_Auto_Secure_2026!@";
+
 export default function AddReviewModal({
   isOpen,
   onClose,
@@ -33,7 +36,7 @@ export default function AddReviewModal({
   onReviewSubmitted,
 }: AddReviewModalProps) {
   const { language, direction } = useLanguage();
-  const { submitReviewAsync } = useNotifications();
+  const { addNotification } = useNotifications();
 
   const [customerName, setCustomerName] = useState("");
   const [rating, setRating] = useState<number>(5);
@@ -71,15 +74,21 @@ export default function AddReviewModal({
 
   /**
    * Non-blocking Submit Handler:
-   * 1. Instantly shows: "تم إرسال تقييمك، سيأتيك الرد قريباً"
-   * 2. Closes the modal immediately so user can continue browsing.
-   * 3. Dispatches async API call to generate AI reply in the background.
+   * 1. Validates input.
+   * 2. Shows instant toast: "تم إرسال تقييمك، سيأتيك الرد قريباً".
+   * 3. IMMEDIATELY closes the modal.
+   * 4. Asynchronously in the background:
+   *    - Calls the Python AI backend on Render (https://smart-review-responder.onrender.com/process-review or /generate_reply).
+   *    - When the AI response returns, calls addNotification with the text.
+   *    - If Render fails or times out, gracefully falls back to /api/review.
    */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     const name = customerName.trim();
     const text = reviewText.trim();
+    const chosenRating = rating;
+    const currentService = serviceTitle;
 
     if (!name) {
       toast.error(
@@ -98,14 +107,7 @@ export default function AddReviewModal({
       return;
     }
 
-    const payload = {
-      customer_name: name,
-      rating,
-      review_text: text,
-      service_title: serviceTitle,
-    };
-
-    // 1. Instantly show a success toast or brief message (Requirement 1)
+    // 1. Instantly show success toast (Requirement 2)
     toast.success(
       language === "ar"
         ? "تم إرسال تقييمك، سيأتيك الرد قريباً"
@@ -114,13 +116,100 @@ export default function AddReviewModal({
         : "Review submitted, a reply will arrive soon"
     );
 
-    // 2. IMMEDIATELY close the review modal (Requirement 1)
+    // 2. IMMEDIATELY close the modal (Requirement 2)
     setReviewText("");
     setRating(5);
     onClose();
 
-    // 3. Send the review data asynchronously in the background (Requirement 2)
-    submitReviewAsync(payload);
+    // 3. Asynchronously send review data to the Render AI backend (Requirement 2 & 3)
+    (async () => {
+      const payload = {
+        customer_name: name,
+        rating: chosenRating,
+        review_text: text,
+      };
+
+      let aiReplyText = "";
+
+      // Step A: Call Render backend directly (/process-review with header)
+      try {
+        const renderRes = await fetch(`${RENDER_BASE_URL}/process-review`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-Secret": INTERNAL_SECRET,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (renderRes.ok) {
+          const json = await renderRes.json();
+          if (json?.data?.ai_reply) {
+            aiReplyText = json.data.ai_reply;
+          } else if (json?.reply) {
+            aiReplyText = json.reply;
+          }
+        }
+      } catch (err) {
+        console.warn("[Background Render API notice]:", err);
+      }
+
+      // Step B: Also try /generate_reply if needed
+      if (!aiReplyText) {
+        try {
+          const genRes = await fetch(`${RENDER_BASE_URL}/generate_reply`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Internal-Secret": INTERNAL_SECRET,
+            },
+            body: JSON.stringify(payload),
+          });
+          if (genRes.ok) {
+            const json = await genRes.json();
+            aiReplyText = json?.ai_reply || json?.reply || json?.data?.ai_reply || "";
+          }
+        } catch {
+          // Silent log per requirement 4
+        }
+      }
+
+      // Step C: Fallback to Next.js API proxy /api/review to guarantee success
+      if (!aiReplyText) {
+        try {
+          const proxyRes = await fetch("/api/review", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...payload,
+              service_title: currentService,
+            }),
+          });
+          if (proxyRes.ok) {
+            const json = await proxyRes.json();
+            aiReplyText = json?.data?.ai_reply || "";
+          }
+        } catch (proxyErr) {
+          console.warn("[Proxy fallback notice]:", proxyErr);
+        }
+      }
+
+      // Step D: Trigger Bell Notification via addNotification (Requirement 3)
+      if (aiReplyText) {
+        addNotification({
+          id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          message: `رد جديد: ${aiReplyText}`,
+          aiReply: aiReplyText,
+          serviceName: currentService,
+          customerName: name,
+          rating: chosenRating,
+          reviewText: text,
+          isRead: false,
+          read: false,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    })();
   };
 
   return (
@@ -258,8 +347,8 @@ export default function AddReviewModal({
                 <Sparkles className="w-4 h-4 text-[#ffd700] shrink-0" />
                 <span>
                   {language === "ar"
-                    ? "إرسال فوري وغير معطل: سيتم إغلاق النافذة فوراً، وسيصلك إشعار الرد الذكي عبر الجرس 🔔"
-                    : "Instant submission: you will receive the AI reply in the notification bell 🔔"}
+                    ? "⚡ إرسال فوري: سيتم إغلاق النافذة فوراً، وسيصلك إشعار الرد الذكي عبر جرس الإشعارات 🔔"
+                    : "⚡ Instant submission: you will receive the AI reply in the notification bell 🔔"}
                 </span>
               </div>
 
