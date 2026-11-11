@@ -11,6 +11,7 @@ import SupportFab from "@/components/layout/SupportFab";
 import { ToastContainer } from "@/components/ui/Toast";
 import { CartProvider } from "@/context/CartContext";
 import { CatalogProvider } from "@/context/CatalogContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
@@ -81,17 +82,19 @@ export default function RootLayout({
             <LanguageProvider>
               <CatalogProvider>
                 <CartProvider>
-                  <TopMiniBar />
-                  <Header />
-                  <main className="flex-1 flex flex-col pb-20 sm:pb-0">
-                    {children}
-                  </main>
-                  <Footer />
-                  <SupportFab />
-                  <ChatWidget />
-                  <MobileBottomNav />
-                  <CartDrawer />
-                  <ToastContainer />
+                  <NotificationProvider>
+                    <TopMiniBar />
+                    <Header />
+                    <main className="flex-1 flex flex-col pb-20 sm:pb-0">
+                      {children}
+                    </main>
+                    <Footer />
+                    <SupportFab />
+                    <ChatWidget />
+                    <MobileBottomNav />
+                    <CartDrawer />
+                    <ToastContainer />
+                  </NotificationProvider>
                 </CartProvider>
               </CatalogProvider>
             </LanguageProvider>

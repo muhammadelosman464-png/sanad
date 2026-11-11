@@ -37,6 +37,7 @@ import { toast } from "@/components/ui/Toast";
 import { supabase, signOutUser, syncUserProfile } from "@/lib/supabase/client";
 import AuthModal from "@/components/modals/AuthModal";
 import AdminDashboardModal from "@/components/modals/AdminDashboardModal";
+import { useNotifications } from "@/context/NotificationContext";
 
 type Panel = "inbox" | "notifications" | null;
 

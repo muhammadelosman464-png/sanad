@@ -281,6 +281,18 @@ export default function ServiceDetailsModal({
       .finally(() => setLoadingReviews(false));
   }, [service?.id]);
 
+  /* Listen to real-time background review AI replies */
+  useEffect(() => {
+    const handleNewReply = (e: Event) => {
+      const customEvent = e as CustomEvent<ReviewItem>;
+      if (customEvent?.detail) {
+        setReviews((prev) => [customEvent.detail, ...prev]);
+      }
+    };
+    window.addEventListener("sanad-new-review-reply", handleNewReply);
+    return () => window.removeEventListener("sanad-new-review-reply", handleNewReply);
+  }, []);
+
   /* Close on Escape key */
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };

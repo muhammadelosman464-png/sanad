@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Star, Sparkles, Send, Loader2, User, MessageSquareHeart } from "lucide-react";
+import { X, Star, Sparkles, Send, User, MessageSquareHeart } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { toast } from "@/components/ui/Toast";
 import { supabase } from "@/lib/supabase/client";
+import { useNotifications } from "@/context/NotificationContext";
 
 export interface ReviewItem {
   id: string;
@@ -22,7 +23,7 @@ interface AddReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   serviceTitle: string;
-  onReviewSubmitted: (newReview: ReviewItem) => void;
+  onReviewSubmitted?: (newReview: ReviewItem) => void;
 }
 
 export default function AddReviewModal({
@@ -32,11 +33,12 @@ export default function AddReviewModal({
   onReviewSubmitted,
 }: AddReviewModalProps) {
   const { language, direction } = useLanguage();
+  const { submitReviewAsync } = useNotifications();
+
   const [customerName, setCustomerName] = useState("");
   const [rating, setRating] = useState<number>(5);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [reviewText, setReviewText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Attempt to autofill customer name if logged in
   useEffect(() => {
@@ -67,9 +69,19 @@ export default function AddReviewModal({
     ratingLabels[hoverRating || rating]?.[language as "ar" | "en" | "tr"] ||
     ratingLabels[rating]?.ar;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /**
+   * Non-blocking Submit Handler:
+   * 1. Instantly shows: "تم إرسال تقييمك، سيأتيك الرد قريباً"
+   * 2. Closes the modal immediately so user can continue browsing.
+   * 3. Dispatches async API call to generate AI reply in the background.
+   */
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName.trim()) {
+
+    const name = customerName.trim();
+    const text = reviewText.trim();
+
+    if (!name) {
       toast.error(
         language === "ar"
           ? "يرجى إدخال اسمك أولاً"
@@ -77,7 +89,7 @@ export default function AddReviewModal({
       );
       return;
     }
-    if (!reviewText.trim()) {
+    if (!text) {
       toast.error(
         language === "ar"
           ? "يرجى كتابة نص التقييم أو الملاحظة"
@@ -86,46 +98,29 @@ export default function AddReviewModal({
       return;
     }
 
-    setIsSubmitting(true);
+    const payload = {
+      customer_name: name,
+      rating,
+      review_text: text,
+      service_title: serviceTitle,
+    };
 
-    try {
-      const response = await fetch("/api/review", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customer_name: customerName.trim(),
-          rating,
-          review_text: reviewText.trim(),
-          service_title: serviceTitle,
-        }),
-      });
+    // 1. Instantly show a success toast or brief message (Requirement 1)
+    toast.success(
+      language === "ar"
+        ? "تم إرسال تقييمك، سيأتيك الرد قريباً"
+        : language === "tr"
+        ? "Değerlendirmeniz gönderildi, yanıt yakında gelecektir"
+        : "Review submitted, a reply will arrive soon"
+    );
 
-      const resJson = await response.json();
+    // 2. IMMEDIATELY close the review modal (Requirement 1)
+    setReviewText("");
+    setRating(5);
+    onClose();
 
-      if (resJson.success && resJson.data) {
-        toast.success(
-          language === "ar"
-            ? "تم إرسال تقييمك وتوليد الرد الذكي بنجاح!"
-            : "Review submitted and AI reply generated!"
-        );
-        onReviewSubmitted(resJson.data);
-        // Reset form
-        setReviewText("");
-        setRating(5);
-        onClose();
-      } else {
-        toast.error(resJson.message || "حدث خطأ أثناء معالجة التقييم");
-      }
-    } catch (err) {
-      console.error("Submission failed:", err);
-      toast.error(
-        language === "ar"
-          ? "تعذر الاتصال بسيرفر التقييم، يرجى المحاولة ثانية"
-          : "Could not reach review server. Please try again."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    // 3. Send the review data asynchronously in the background (Requirement 2)
+    submitReviewAsync(payload);
   };
 
   return (
@@ -137,7 +132,7 @@ export default function AddReviewModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={!isSubmitting ? onClose : undefined}
+            onClick={onClose}
             className="fixed inset-0 bg-black/75 backdrop-blur-md"
           />
 
@@ -173,15 +168,13 @@ export default function AddReviewModal({
                 </div>
               </div>
 
-              {!isSubmitting && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white/70 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Form */}
@@ -198,7 +191,6 @@ export default function AddReviewModal({
                       <button
                         key={star}
                         type="button"
-                        disabled={isSubmitting}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}
                         onClick={() => setRating(star)}
@@ -230,7 +222,6 @@ export default function AddReviewModal({
                   <input
                     type="text"
                     required
-                    disabled={isSubmitting}
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
                     placeholder={
@@ -251,7 +242,6 @@ export default function AddReviewModal({
                 <textarea
                   required
                   rows={3}
-                  disabled={isSubmitting}
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder={
@@ -263,61 +253,33 @@ export default function AddReviewModal({
                 />
               </div>
 
-              {/* Submitting Loading Banner — Requirement 4 */}
-              {isSubmitting && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-3.5 rounded-2xl bg-[#d4af37]/15 border border-[#d4af37]/40 flex items-center justify-center gap-3 text-center"
-                >
-                  <Loader2 className="w-5 h-5 text-[#d4af37] animate-spin shrink-0" />
-                  <div className="flex flex-col items-center">
-                    <span className="text-sm font-bold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4 text-[#ffd700] animate-pulse" />
-                      {language === "ar"
-                        ? "جاري تحليل تقييمك وتوليد الرد..."
-                        : language === "tr"
-                        ? "Değerlendirmeniz analiz ediliyor ve yanıt üretiliyor..."
-                        : "Analyzing your review and generating AI reply..."}
-                    </span>
-                    <span className="text-[11px] text-[#d4af37]/80">
-                      {language === "ar"
-                        ? "يتم التواصل مع محرك الذكاء الاصطناعي (Gemini)..."
-                        : "Contacting Gemini AI Engine..."}
-                    </span>
-                  </div>
-                </motion.div>
-              )}
+              {/* Non-blocking instant UX Hint */}
+              <div className="px-3 py-2 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center gap-2 text-xs text-[#ffd700]">
+                <Sparkles className="w-4 h-4 text-[#ffd700] shrink-0" />
+                <span>
+                  {language === "ar"
+                    ? "إرسال فوري وغير معطل: سيتم إغلاق النافذة فوراً، وسيصلك إشعار الرد الذكي عبر الجرس 🔔"
+                    : "Instant submission: you will receive the AI reply in the notification bell 🔔"}
+                </span>
+              </div>
 
               {/* Action Buttons */}
               <div className="pt-2 flex items-center gap-3">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-[#0f1b13] bg-gradient-to-r from-[#ffd700] via-[#d4af37] to-[#b8930a] hover:from-[#ffe57a] hover:to-[#d4af37] shadow-lg shadow-[#d4af37]/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-[#0f1b13] bg-gradient-to-r from-[#ffd700] via-[#d4af37] to-[#b8930a] hover:from-[#ffe57a] hover:to-[#d4af37] shadow-lg shadow-[#d4af37]/20 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{language === "ar" ? "جاري الإرسال..." : "Sending..."}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 rtl:rotate-180" />
-                      <span>{language === "ar" ? "إرسال التقييم" : "Submit Review"}</span>
-                    </>
-                  )}
+                  <Send className="w-4 h-4 rtl:rotate-180" />
+                  <span>{language === "ar" ? "إرسال التقييم" : "Submit Review"}</span>
                 </button>
 
-                {!isSubmitting && (
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="py-3 px-5 rounded-xl font-semibold text-sm text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition"
-                  >
-                    {language === "ar" ? "إلغاء" : "Cancel"}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="py-3 px-5 rounded-xl font-semibold text-sm text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                >
+                  {language === "ar" ? "إلغاء" : "Cancel"}
+                </button>
               </div>
             </form>
           </motion.div>
