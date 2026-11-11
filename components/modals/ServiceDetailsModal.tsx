@@ -574,17 +574,27 @@ export default function ServiceDetailsModal({
                       <button
                         type="button"
                         onClick={() => setReviewModalOpen(true)}
-                        className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-[#0f1b13] text-xs font-bold shadow-md shadow-[#d4af37]/20 hover:opacity-95 transition"
+                        className="mt-3 inline-flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#ffd700] via-[#d4af37] to-[#b8930a] text-[#0f1b13] text-sm font-bold shadow-lg shadow-[#d4af37]/20 hover:brightness-105 transition"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>{language === "ar" ? "أضف أول تقييم الآن" : "Add first review now"}</span>
+                        <Sparkles className="w-4 h-4" />
+                        <span>{language === "ar" ? "⭐ أضف تقييماً لهذه الخدمة" : "⭐ Add Review for this Service"}</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-3 max-h-80 overflow-y-auto pe-1 [scrollbar-width:thin]">
-                      {reviews.map((rev) => (
-                        <ReviewThreadItem key={rev.id} review={rev} />
-                      ))}
+                    <div className="space-y-3">
+                      <div className="space-y-3 max-h-80 overflow-y-auto pe-1 [scrollbar-width:thin]">
+                        {reviews.map((rev) => (
+                          <ReviewThreadItem key={rev.id} review={rev} />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReviewModalOpen(true)}
+                        className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500/15 via-[#d4af37]/25 to-amber-500/15 hover:from-[#ffd700]/30 hover:to-[#d4af37]/45 border border-[#d4af37]/60 text-slate-900 dark:text-[#ffd700] text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.98]"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#d4af37]" />
+                        <span>{language === "ar" ? "⭐ أضف تقييماً آخر لهذه الخدمة" : "⭐ Add another review"}</span>
+                      </button>
                     </div>
                   )}
                 </div>

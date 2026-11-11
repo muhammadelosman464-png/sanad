@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, SearchX, ShoppingBag, Star } from "lucide-react";
+import { Plus, SearchX, ShoppingBag, Star, Sparkles } from "lucide-react";
+import AddReviewModal from "@/components/reviews/AddReviewModal";
 import { useLanguage } from "@/context/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import ServiceDetailsModal, {
@@ -56,6 +57,7 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
   const { services: catalog } = useCatalog();
   const [activeFilter, setActiveFilter] = useState<FilterId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reviewService, setReviewService] = useState<ServiceItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [visualFileName, setVisualFileName] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("popular");
@@ -289,6 +291,25 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
                           </span>
                         )}
                       </div>
+
+                      {/* Prominent Add Review Button on every Service Card */}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setReviewService(service);
+                        }}
+                        className="w-full mt-3 py-2.5 px-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 dark:bg-[#d4af37]/15 dark:hover:bg-[#d4af37]/25 border border-amber-500/40 dark:border-[#d4af37]/60 text-amber-800 dark:text-[#ffd700] text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-600 dark:text-[#d4af37]" />
+                        <span>
+                          {language === "ar"
+                            ? "⭐ أضف تقييماً"
+                            : language === "tr"
+                            ? "⭐ Değerlendirme Ekle"
+                            : "⭐ Add Review"}
+                        </span>
+                      </button>
                     </div>
                   </motion.div>
                 );
@@ -301,6 +322,28 @@ export default function ServicesGrid({ searchTerm }: { searchTerm: string }) {
       <ServiceDetailsModal
         serviceId={selectedId}
         onClose={() => setSelectedId(null)}
+      />
+
+      {/* Direct Add Review Modal from Service Card */}
+      <AddReviewModal
+        isOpen={reviewService !== null}
+        onClose={() => setReviewService(null)}
+        serviceTitle={
+          reviewService
+            ? language === "ar"
+              ? reviewService.titleAr
+              : language === "tr"
+              ? reviewService.titleTr
+              : reviewService.titleEn
+            : ""
+        }
+        onReviewSubmitted={() => {
+          toast.success(
+            language === "ar"
+              ? "تم إرسال تقييمك واستلام رد الذكاء الاصطناعي بنجاح!"
+              : "Review submitted and AI reply generated successfully!"
+          );
+        }}
       />
     </section>
   );
