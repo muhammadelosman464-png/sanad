@@ -23,9 +23,13 @@ import {
   CheckCircle2,
   LogIn,
   DollarSign,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import AuthModal from "@/components/modals/AuthModal";
+import AddReviewModal, { ReviewItem } from "@/components/reviews/AddReviewModal";
+import ReviewThreadItem from "@/components/reviews/ReviewThreadItem";
 import { useCart } from "@/context/CartContext";
 import NumberInput from "@/components/ui/NumberInput";
 import { useCatalog } from "@/context/CatalogContext";
@@ -248,6 +252,9 @@ export default function ServiceDetailsModal({
   const [customAmount, setCustomAmountState] = useState<string>("");
   const [locationNote, setLocationNote] = useState<string>("");
   const [authOpen, setAuthOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   const { services } = useCatalog();
   const service = serviceId ? services.find((item) => item.id === serviceId) ?? null : null;
@@ -258,6 +265,21 @@ export default function ServiceDetailsModal({
     setCustomAmountState("");
     setLocationNote("");
   }, [serviceId]);
+
+  /* Fetch reviews when service opens */
+  useEffect(() => {
+    if (!service) return;
+    setLoadingReviews(true);
+    fetch("/api/review?limit=10")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && Array.isArray(res.reviews)) {
+          setReviews(res.reviews);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingReviews(false));
+  }, [service?.id]);
 
   /* Close on Escape key */
   useEffect(() => {
@@ -507,6 +529,65 @@ export default function ServiceDetailsModal({
                 <p className="text-center text-xs text-slate-400 dark:text-slate-500 -mt-2 pb-1">
                   {language === "ar" ? "يمكنك التصفح والإضافة للسلة دون تسجيل الدخول." : language === "tr" ? "Giriş yapmadan hizmetleri inceleyip sepete ekleyebilirsiniz." : "Browse and add services to your basket without signing in."}
                 </p>
+
+                {/* ── Reviews & Smart AI Responder Section ──────────────── */}
+                <div className="pt-4 border-t border-slate-200 dark:border-[#d4af37]/20 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-500 flex items-center justify-center">
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        {language === "ar" ? "التقييمات والرد الذكي" : language === "tr" ? "Değerlendirmeler ve Akıllı Yanıt" : "Reviews and Smart AI Replies"}
+                      </h3>
+                      {reviews.length > 0 && (
+                        <span className="text-[11px] font-semibold text-slate-400">
+                          ({reviews.length})
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Requirement 1: Add Review Button */}
+                    <button
+                      type="button"
+                      onClick={() => setReviewModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#ffd700]/15 to-[#d4af37]/20 hover:from-[#ffd700]/30 hover:to-[#d4af37]/35 border border-[#d4af37]/50 text-xs font-bold text-[#b8930a] dark:text-[#ffd700] transition active:scale-95 shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#d4af37]" />
+                      <span>{language === "ar" ? "أضف تقييماً" : language === "tr" ? "Değerlendirme Ekle" : "Add Review"}</span>
+                    </button>
+                  </div>
+
+                  {/* Reviews Thread List */}
+                  {loadingReviews ? (
+                    <div className="flex items-center justify-center py-5 text-xs text-slate-400 gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#d4af37]" />
+                      <span>{language === "ar" ? "جاري تحميل التقييمات..." : "Loading reviews..."}</span>
+                    </div>
+                  ) : reviews.length === 0 ? (
+                    <div className="text-center py-5 px-4 rounded-2xl bg-slate-50 dark:bg-[#142319] border border-dashed border-slate-200 dark:border-[#d4af37]/25">
+                      <p className="text-xs text-slate-500 dark:text-slate-300">
+                        {language === "ar"
+                          ? "لا توجد تقييمات مسجلة بعد. كن أول من يقيّم الخدمة واحصل على رد ذكي فوري!"
+                          : "No reviews yet. Be the first to add a review and get an instant AI reply!"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setReviewModalOpen(true)}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-[#0f1b13] text-xs font-bold shadow-md shadow-[#d4af37]/20 hover:opacity-95 transition"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{language === "ar" ? "أضف أول تقييم الآن" : "Add first review now"}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-80 overflow-y-auto pe-1 [scrollbar-width:thin]">
+                      {reviews.map((rev) => (
+                        <ReviewThreadItem key={rev.id} review={rev} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -514,6 +595,16 @@ export default function ServiceDetailsModal({
       </AnimatePresence>
 
       {/* Auth modal — only when guest taps "Log in to Continue" */}
+      {/* Add Review Modal */}
+      <AddReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        serviceTitle={title}
+        onReviewSubmitted={(newReview) => {
+          setReviews((prev) => [newReview, ...prev]);
+        }}
+      />
+
       <AuthModal
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
