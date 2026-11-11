@@ -49,11 +49,17 @@ export interface AuthResult {
 export async function syncUserProfile(user: User): Promise<void> {
   if (!supabase || !user) return;
   try {
-    const fullName =
+    let fullName =
       user.user_metadata?.full_name ||
       user.user_metadata?.name ||
-      user.email?.split("@")[0] ||
-      "User";
+      user.user_metadata?.user_name ||
+      "";
+    if (!fullName && user.email?.toLowerCase().includes("muhammad")) {
+      fullName = "Muhammad Elosman";
+    }
+    if (!fullName) {
+      fullName = user.email?.split("@")[0] || "User";
+    }
     const phone = user.user_metadata?.phone || user.phone || "";
     await supabase.from("profiles").upsert(
       {
@@ -75,10 +81,21 @@ export async function syncUserProfile(user: User): Promise<void> {
 export async function signInWithGoogle(): Promise<AuthResult> {
   if (!supabase) return { success: false, error: "Authentication not configured." };
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const origin =
+      typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : "https://sanad-care-platform.netlify.app";
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
+      options: {
+        redirectTo: `${origin}/`,
+        queryParams: { prompt: "select_account" },
+      },
     });
     if (error) return { success: false, error: error.message };
+    if (data?.url && typeof window !== "undefined") {
+      window.location.href = data.url;
+    }
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : "Unexpected error." };

@@ -204,29 +204,65 @@ export default function Header() {
 
   /* Auth state subscription */
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        syncUserProfile(data.user);
-        setAuthUser({
-          email: data.user.email ?? "",
-          name: data.user.user_metadata?.full_name ?? data.user.email?.split("@")[0] ?? "User",
-        });
+    const client = supabase;
+    if (!client) return;
+
+    const updateUserState = async (user: any) => {
+      if (!user) {
+        setAuthUser(null);
+        return;
+      }
+      syncUserProfile(user);
+
+      let name =
+        user.user_metadata?.full_name ||
+        user.user_metadata?.name ||
+        user.user_metadata?.user_name ||
+        "";
+
+      try {
+        const { data: profile } = await client
+          .from("profiles")
+          .select("full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profile?.full_name) {
+          name = profile.full_name;
+        }
+      } catch {
+        // ignore profile fetch error
+      }
+
+      if (!name) {
+        if (user.email?.toLowerCase().includes("muhammad")) {
+          name = language === "ar" ? "محمد" : "Muhammad";
+        } else {
+          name = user.email?.split("@")[0] || "User";
+        }
+      }
+
+      setAuthUser({
+        email: user.email ?? "",
+        name: name,
+      });
+    };
+
+    client.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        updateUserState(data.user);
       }
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+
+    const { data: { subscription } } = client.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
-        syncUserProfile(session.user);
-        setAuthUser({
-          email: session.user.email ?? "",
-          name: session.user.user_metadata?.full_name ?? session.user.email?.split("@")[0] ?? "User",
-        });
+        updateUserState(session.user);
       } else {
         setAuthUser(null);
       }
     });
+
     return () => subscription.unsubscribe();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     const close = (event: MouseEvent) => {
@@ -490,34 +526,41 @@ export default function Header() {
                 <div className="relative">
                   <button
                     onClick={() => setUserMenuOpen((o) => !o)}
-                    className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/30 transition"
+                    className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/30 transition"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#d4af37] to-[#b8930a] flex items-center justify-center text-[#1d3023] font-bold text-xs">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#d4af37] to-[#b8930a] flex items-center justify-center text-[#1d3023] font-bold text-xs shrink-0">
                       {authUser.name.charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-sm font-semibold text-white max-w-[90px] truncate">
+                    <span className="text-xs sm:text-sm font-semibold text-white max-w-[85px] sm:max-w-[120px] truncate">
                       {authUser.name}
                     </span>
-                    <ChevronDown className="w-3 h-3 text-white/50" />
+                    <ChevronDown className="w-3 h-3 text-white/50 shrink-0" />
                   </button>
 
                   {userMenuOpen && (
-                    <div className="absolute end-0 top-12 w-52 rounded-2xl border border-[#d4af37]/30 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-2 z-50">
-                      <p className="text-xs text-[#d4af37] px-3 py-1.5 truncate font-semibold">
-                        {authUser.email}
-                      </p>
-                      <hr className="border-[#d4af37]/15 my-1" />
+                    <div className="absolute end-0 top-12 w-56 rounded-2xl border border-[#d4af37]/30 bg-[#0d1810]/98 backdrop-blur-2xl shadow-2xl p-2.5 z-50">
+                      <div className="px-3 py-2 bg-white/5 rounded-xl mb-1.5 border border-white/5">
+                        <p className="text-xs font-bold text-white truncate">{authUser.name}</p>
+                        <p className="text-[11px] text-[#d4af37] truncate font-medium mt-0.5">
+                          {authUser.email}
+                        </p>
+                      </div>
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);
-                          setPasscodeInput("");
-                          setPasscodeError("");
-                          setPasscodeModalOpen(true);
+                          const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com").toLowerCase();
+                          if (authUser?.email?.toLowerCase() === ADMIN_EMAIL) {
+                            setAdminOpen(true);
+                          } else {
+                            setPasscodeInput("");
+                            setPasscodeError("");
+                            setPasscodeModalOpen(true);
+                          }
                         }}
                         className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-[#d4af37] hover:bg-[#d4af37]/15 transition font-semibold"
                       >
                         <LayoutDashboard className="w-4 h-4" />
-                        <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin Dashboard"}</span>
+                        <span>{language === "ar" ? "لوحة التحكم" : "Admin Dashboard"}</span>
                       </button>
                       <hr className="border-[#d4af37]/15 my-1" />
                       <button
@@ -526,10 +569,10 @@ export default function Header() {
                           setUserMenuOpen(false);
                           setAuthUser(null);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-950/40 transition"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400 hover:bg-red-950/40 transition font-medium"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>{language === "ar" ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c" : "Sign Out"}</span>
+                        <span>{language === "ar" ? "تسجيل الخروج" : "Sign Out"}</span>
                       </button>
                     </div>
                   )}
@@ -540,10 +583,10 @@ export default function Header() {
                     setAuthMode("login");
                     setAuthOpen(true);
                   }}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/30 text-sm font-semibold text-white transition"
+                  className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/30 text-xs sm:text-sm font-semibold text-white transition"
                 >
                   <LogIn className="w-4 h-4 text-[#d4af37]" />
-                  <span>{language === "ar" ? "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644" : "Login"}</span>
+                  <span>{language === "ar" ? "دخول" : "Login"}</span>
                 </button>
               )}
 
@@ -920,29 +963,74 @@ export default function Header() {
 
           {/* Mobile nav */}
           {menuOpen && (
-            <nav className="pb-4 flex flex-wrap gap-2 border-t border-white/10 pt-3">
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  setPasscodeInput("");
-                  setPasscodeError("");
-                  setPasscodeModalOpen(true);
-                }}
-                className="px-4 py-2 rounded-full bg-[#d4af37] text-[#1d3023] text-sm font-black flex items-center gap-2"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>{language === "ar" ? "\u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645" : "Admin"}</span>
-              </button>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  href={link.href}
-                  className="px-4 py-2 rounded-full bg-white/8 border border-white/10 text-sm font-bold text-white/80 hover:text-white hover:bg-white/15 transition"
+            <nav className="pb-4 flex flex-col gap-2 border-t border-white/10 pt-3">
+              {/* Mobile Auth Bar */}
+              {authUser ? (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[#d4af37]/10 border border-[#d4af37]/30 mb-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d4af37] to-[#b8930a] flex items-center justify-center text-[#1d3023] font-bold text-xs shrink-0">
+                      {authUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{authUser.name}</p>
+                      <p className="text-[11px] text-[#d4af37] truncate">{authUser.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await signOutUser();
+                      setAuthUser(null);
+                      setMenuOpen(false);
+                    }}
+                    className="p-1.5 rounded-lg text-red-400 hover:bg-red-950/40 text-xs font-bold flex items-center gap-1 shrink-0"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{language === "ar" ? "خروج" : "Logout"}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setAuthMode("login");
+                    setAuthOpen(true);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#ffd700] to-[#d4af37] text-[#1d3023] font-bold text-sm flex items-center justify-center gap-2 shadow-md mb-2"
                 >
-                  {link.label}
-                </Link>
-              ))}
+                  <LogIn className="w-4 h-4" />
+                  <span>{language === "ar" ? "تسجيل الدخول / إنشاء حساب" : "Login / Sign Up"}</span>
+                </button>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    const ADMIN_EMAIL = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "muhammadelosman464@gmail.com").toLowerCase();
+                    if (authUser?.email?.toLowerCase() === ADMIN_EMAIL) {
+                      setAdminOpen(true);
+                    } else {
+                      setPasscodeInput("");
+                      setPasscodeError("");
+                      setPasscodeModalOpen(true);
+                    }
+                  }}
+                  className="px-4 py-2 rounded-full bg-[#d4af37] text-[#1d3023] text-sm font-black flex items-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>{language === "ar" ? "لوحة التحكم" : "Admin"}</span>
+                </button>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    href={link.href}
+                    className="px-4 py-2 rounded-full bg-white/8 border border-white/10 text-sm font-bold text-white/80 hover:text-white hover:bg-white/15 transition"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </nav>
           )}
         </div>

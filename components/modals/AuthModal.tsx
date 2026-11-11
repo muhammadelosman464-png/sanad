@@ -181,11 +181,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = "login" }: Au
     setLoading(true);
     setErrorMsg(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const origin =
+        typeof window !== "undefined" && window.location.origin
+          ? window.location.origin
+          : "https://sanad-care-platform.netlify.app";
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
+        options: {
+          redirectTo: `${origin}/`,
+          queryParams: {
+            prompt: "select_account",
+            access_type: "offline",
+          },
+        },
       });
       if (error) {
         setErrorMsg(error.message ?? "Google sign in failed");
+      } else if (data?.url) {
+        window.location.href = data.url;
       } else {
         onClose();
       }

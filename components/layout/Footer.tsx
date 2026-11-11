@@ -130,7 +130,20 @@ export default function Footer() {
                 type="button"
                 onClick={async () => {
                   if (supabase) {
-                    await supabase.auth.signInWithOAuth({ provider: "google" });
+                    const origin =
+                      typeof window !== "undefined" && window.location.origin
+                        ? window.location.origin
+                        : "https://sanad-care-platform.netlify.app";
+                    const { data } = await supabase.auth.signInWithOAuth({
+                      provider: "google",
+                      options: {
+                        redirectTo: `${origin}/`,
+                        queryParams: { prompt: "select_account" },
+                      },
+                    });
+                    if (data?.url) {
+                      window.location.href = data.url;
+                    }
                   }
                 }}
                 aria-label="Google Sign In"
